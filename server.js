@@ -1,205 +1,269 @@
 const express = require('express');
 const cors = require('cors');
-const TelegramBot = require('node-telegram-bot-api');
-const sqlite3 = require('sqlite3').verbose();
-const cron = require('node-cron');
+const path = require('path');
 
 const app = express();
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true
-}));
-
-app.options('*', cors());
+app.use(cors());
 app.use(express.json());
 
-const BOT_TOKEN = process.env.BOT_TOKEN || '8412641855:AAFkix8Ix-1flmiIwI5pk6kwVqicyhSlg5g';
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '8777895536';
+// قائمة الجوائز والاحتمالات (الوزن / Weight)
+const PRIZES = [
+  { id: 1, text: "10 USDT", color: "#3b82f6", weight: 5 },
+  { id: 2, text: "حظ سعيد المره الجايه", color: "#64748b", weight: 45 },
+  { id: 3, text: "5 USDT", color: "#10b981", weight: 15 },
+  { id: 4, text: "خصم 50%", color: "#f59e0b", weight: 20 },
+  { id: 5, text: "1 USDT", color: "#8b5cf6", weight: 25 },
+  { id: 6, text: "لا توجد جائزة", color: "#ef4444", weight: 40 }
+];
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-const db = new sqlite3.Database('./database.db');
+// دالة اختيار الجائزة حسب الاحتمالات
+function getRandomPrize() {
+  const totalWeight = PRIZES.reduce((acc, p) => acc + p.weight, 0);
+  let randomNum = Math.random() * totalWeight;
+  
+  for (let i = 0; i < PRIZES.length; i++) {
+    if (randomNum < PRIZES[i].weight) {
+      return { prize: PRIZES[i], index: i };
+    }
+    randomNum -= PRIZES[i].weight;
+  }
+  return { prize: PRIZES[0], index: 0 };
+}
 
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        telegram_id TEXT PRIMARY KEY,
-        first_name TEXT,
-        username TEXT,
-        balance REAL DEFAULT 100.0
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS deposits (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        telegram_id TEXT,
-        amount REAL,
-        status TEXT DEFAULT 'PENDING',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS trades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        telegram_id TEXT,
-        amount REAL,
-        rate REAL,
-        payout REAL,
-        duration_seconds INTEGER,
-        start_time INTEGER,
-        end_time INTEGER,
-        status TEXT DEFAULT 'ACTIVE'
-    )`);
+// API للحصول على الجوائز
+app.get('/api/prizes', (req, res) => {
+  res.json({ prizes: PRIZES });
 });
 
+// API عملية التدوير
+app.post('/api/spin', (req, res) => {
+  const { userId } = req.body;
+  
+  // اختيار الجائزة
+  const result = getRandomPrize();
+  
+  res.json({
+    success: true,
+    prizeIndex: result.index,
+    prize: result.prize
+  });
+});
+
+// الصفحة الرئيسية (Telegram Mini App Frontend)
 app.get('/', (req, res) => {
-    res.send('Server is active and running perfectly!');
-});
+  res.send(`
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عجلة الحظ - Telegram Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f172a;
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    h1 { margin-bottom: 20px; font-size: 24px; color: #38bdf8; text-align: center; }
+    
+    .wheel-container {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin-bottom: 30px;
+    }
+    
+    .pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 25px solid #ef4444;
+      z-index: 10;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      transition: transform 4s cubic-bezier(0.15, 0.99, 0.18, 1);
+    }
+    
+    button {
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button:active { transform: scale(0.95); }
+    
+    #resultModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 80%;
+      border: 1px solid #38bdf8;
+    }
+    .modal-content h2 { margin-bottom: 10px; color: #4ade80; }
+    .modal-content button { margin-top: 15px; font-size: 14px; padding: 10px 20px; }
+  </style>
+</head>
+<body>
 
-app.post('/api/user/auth', (req, res) => {
-    const { telegram_id, first_name, username } = req.body;
-    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' });
+  <h1>🎯 جرب حظك واكسب!</h1>
 
-    db.get(`SELECT * FROM users WHERE telegram_id = ?`, [telegram_id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="320" height="320"></canvas>
+  </div>
 
-        if (!row) {
-            db.run(`INSERT INTO users (telegram_id, first_name, username, balance) VALUES (?, ?, ?, 100.0)`,
-                [telegram_id, first_name, username],
-                (err) => {
-                    if (err) return res.status(500).json({ error: err.message });
-                    res.json({ telegram_id, first_name, username, balance: 100.0 });
-                }
-            );
-        } else {
-            res.json(row);
+  <button id="spinBtn">أدر العجلة الآن 🎲</button>
+
+  <div id="resultModal">
+    <div class="modal-content">
+      <h2>🎉 مبروك!</h2>
+      <p id="resultText"></p>
+      <button onclick="closeModal()">إغلاق</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.expand();
+
+    let prizes = [];
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+
+    // جلب الجوائز من API
+    async function loadPrizes() {
+      const res = await fetch('/api/prizes');
+      const data = await res.json();
+      prizes = data.prizes;
+      drawWheel();
+    }
+
+    function drawWheel() {
+      const numSlices = prizes.length;
+      const sliceAngle = (2 * Math.PI) / numSlices;
+
+      prizes.forEach((prize, i) => {
+        const startAngle = i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(160, 160);
+        ctx.arc(160, 160, 160, startAngle, endAngle);
+        ctx.fillStyle = prize.color;
+        ctx.fill();
+        ctx.stroke();
+
+        // رسم النص
+        ctx.save();
+        ctx.translate(160, 160);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 14px system-ui";
+        ctx.fillText(prize.text, 140, 5);
+        ctx.restore();
+      });
+    }
+
+    spinBtn.addEventListener('click', async () => {
+      if (isSpinning) return;
+      isSpinning = true;
+      spinBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/spin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: tg?.initDataUnsafe?.user?.id || 'guest' })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const sliceAngle = 360 / prizes.length;
+          // حساب زاوية الوقوف الصحيحة تحت السهم أعلى العجلة
+          const prizeIndex = data.prizeIndex;
+          const targetAngle = 360 - (prizeIndex * sliceAngle + sliceAngle / 2) - 90;
+          
+          const extraTurns = 5 * 360; // 5 دورات كاملة
+          currentRotation += extraTurns + (targetAngle - (currentRotation % 360));
+          
+          canvas.style.transform = \`rotate(\${currentRotation}deg)\`;
+
+          setTimeout(() => {
+            document.getElementById('resultText').innerText = \`حصلت على: \${data.prize.text}\`;
+            document.getElementById('resultModal').style.display = 'flex';
+            isSpinning = false;
+            spinBtn.disabled = false;
+          }, 4000);
         }
+      } catch (e) {
+        alert("حدث خطأ أثناء الاتصال بالسيرفر!");
+        isSpinning = false;
+        spinBtn.disabled = false;
+      }
     });
-});
 
-app.post('/api/deposit/request', (req, res) => {
-    const { telegram_id, amount } = req.body;
-
-    if (!telegram_id || !amount) {
-        return res.status(400).json({ error: 'البيانات غير مكتملة' });
+    function closeModal() {
+      document.getElementById('resultModal').style.display = 'none';
     }
 
-    db.run(`INSERT INTO deposits (telegram_id, amount) VALUES (?, ?)`, [telegram_id, amount], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-
-        const depositId = this.lastID;
-        const msgText = `📥 **طلب إيداع جديد!**\n\n👤 المستخدم ID: \`${telegram_id}\`\n💰 المبلغ المطلوب: $${amount}\n🆔 رقم الطلب: #${depositId}`;
-        const opts = {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: 'قبول الإيداع ✅', callback_data: `dep_approve_${depositId}` },
-                        { text: 'رفض الإيداع ❌', callback_data: `dep_reject_${depositId}` }
-                    ]
-                ]
-            }
-        };
-
-        bot.sendMessage(ADMIN_CHAT_ID, msgText, opts).catch(e => console.error("خطأ إرسال رسالة البوت:", e));
-        res.json({ success: true, message: 'تم إرسال طلب الإيداع لمدير المنصة' });
-    });
+    loadPrizes();
+  </script>
+</body>
+</html>
+  `);
 });
 
-app.post('/api/trade/open', (req, res) => {
-    const { telegram_id, amount } = req.body;
+// تصدير app لتشغيله كـ Serverless على Vercel
+module.exports = app;
 
-    if (!telegram_id || !amount) {
-        return res.status(400).json({ error: 'البيانات غير مكتملة' });
-    }
-
-    db.get(`SELECT balance FROM users WHERE telegram_id = ?`, [telegram_id], (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!user || user.balance < amount) {
-            return res.status(400).json({ error: 'الرصيد المتاح غير كافٍ' });
-        }
-
-        let rate = 0.30;
-        let seconds = 24 * 3600;
-
-        if (amount >= 1000) { rate = 3.00; seconds = 7 * 24 * 3600; }
-        else if (amount >= 500) { rate = 1.50; seconds = 72 * 3600; }
-        else if (amount >= 100) { rate = 0.60; seconds = 48 * 3600; }
-
-        const payout = amount + (amount * rate);
-        const startTime = Date.now();
-        const endTime = startTime + (seconds * 1000);
-
-        db.run(`UPDATE users SET balance = balance - ? WHERE telegram_id = ?`, [amount, telegram_id], (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-
-            db.run(`INSERT INTO trades (telegram_id, amount, rate, payout, duration_seconds, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [telegram_id, amount, rate, payout, seconds, startTime, endTime],
-                function(err) {
-                    if (err) return res.status(500).json({ error: err.message });
-                    res.json({ success: true, tradeId: this.lastID });
-                }
-            );
-        });
-    });
-});
-
-app.get('/api/trades/:telegram_id', (req, res) => {
-    db.all(`SELECT * FROM trades WHERE telegram_id = ? ORDER BY id DESC`, [req.params.telegram_id], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []);
-    });
-});
-
-bot.on('callback_query', (query) => {
-    const data = query.data;
-
-    if (data.startsWith('dep_approve_')) {
-        const depositId = data.replace('dep_approve_', '');
-
-        db.get(`SELECT * FROM deposits WHERE id = ? AND status = 'PENDING'`, [depositId], (err, dep) => {
-            if (!dep) return bot.answerCallbackQuery(query.id, { text: 'الطلب غير موجود أو تم معالجته سابقاً' });
-
-            db.run(`UPDATE users SET balance = balance + ? WHERE telegram_id = ?`, [dep.amount, dep.telegram_id]);
-            db.run(`UPDATE deposits SET status = 'APPROVED' WHERE id = ?`, [depositId]);
-
-            bot.sendMessage(dep.telegram_id, `🎉 **تم قبول طلب الإيداع الخاص بك!**\nتم إضافة $${dep.amount} إلى حسابك.`);
-            bot.editMessageText(`✅ **تم قبول الإيداع #${depositId}** بمبلغ $${dep.amount}`, {
-                chat_id: query.message.chat.id,
-                message_id: query.message.message_id
-            });
-        });
-    } else if (data.startsWith('dep_reject_')) {
-        const depositId = data.replace('dep_reject_', '');
-
-        db.get(`SELECT * FROM deposits WHERE id = ? AND status = 'PENDING'`, [depositId], (err, dep) => {
-            if (!dep) return bot.answerCallbackQuery(query.id, { text: 'الطلب غير موجود أو تم معالجته سابقاً' });
-
-            db.run(`UPDATE deposits SET status = 'REJECTED' WHERE id = ?`, [depositId]);
-
-            bot.sendMessage(dep.telegram_id, `❌ **تم رفض طلب الإيداع الخاص بك.**`);
-            bot.editMessageText(`❌ **تم رفض الإيداع #${depositId}**`, {
-                chat_id: query.message.chat.id,
-                message_id: query.message.message_id
-            });
-        });
-    }
-});
-
-cron.schedule('*/5 * * * * *', () => {
-    const now = Date.now();
-    db.all(`SELECT * FROM trades WHERE status = 'ACTIVE' AND end_time <= ?`, [now], (err, trades) => {
-        if (err || !trades) return;
-
-        trades.forEach((trade) => {
-            db.run(`UPDATE users SET balance = balance + ? WHERE telegram_id = ?`, [trade.payout, trade.telegram_id]);
-            db.run(`UPDATE trades SET status = 'COMPLETED' WHERE id = ?`, [trade.id]);
-
-            bot.sendMessage(trade.telegram_id, `🎯 **اكتملت خطة الأرباح بنجاح!**\nتم نزول $${trade.payout.toFixed(2)} تلقائياً في حسابك.`).catch(e => {});
-        });
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// تشغيل السيرفر محلياً عند عدم وجود Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
