@@ -1,16 +1,13 @@
 {
-  "name": "binance-bot-backend",
+  "name": "telegram-wheel-app",
   "version": "1.0.0",
-  "description": "Telegram Web App Backend",
+  "description": "Telegram Mini App - Spin the Wheel for Vercel",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "node-cron": "^3.0.3",
-    "node-telegram-bot-api": "^0.64.0",
-    "sqlite3": "^5.1.7"
+    "express": "^4.18.2"
   }
 }
