@@ -1,269 +1,165 @@
 const express = require('express');
+const { Telegraf, Markup } = require('telegraf');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
-// قائمة الجوائز والاحتمالات (الوزن / Weight)
-const PRIZES = [
-  { id: 1, text: "10 USDT", color: "#3b82f6", weight: 5 },
-  { id: 2, text: "حظ سعيد المره الجايه", color: "#64748b", weight: 45 },
-  { id: 3, text: "5 USDT", color: "#10b981", weight: 15 },
-  { id: 4, text: "خصم 50%", color: "#f59e0b", weight: 20 },
-  { id: 5, text: "1 USDT", color: "#8b5cf6", weight: 25 },
-  { id: 6, text: "لا توجد جائزة", color: "#ef4444", weight: 40 }
-];
+// --- الإعدادات الأساسية ---
+const BOT_TOKEN = process.env.BOT_TOKEN || "ضع_توكن_البوت_هنا";
+const ADMIN_ID = process.env.ADMIN_ID || "ضع_ايدي_الادمن_هنا";
+const bot = new Telegraf(BOT_TOKEN);
 
-// دالة اختيار الجائزة حسب الاحتمالات
-function getRandomPrize() {
-  const totalWeight = PRIZES.reduce((acc, p) => acc + p.weight, 0);
-  let randomNum = Math.random() * totalWeight;
-  
-  for (let i = 0; i < PRIZES.length; i++) {
-    if (randomNum < PRIZES[i].weight) {
-      return { prize: PRIZES[i], index: i };
-    }
-    randomNum -= PRIZES[i].weight;
-  }
-  return { prize: PRIZES[0], index: 0 };
-}
-
-// API للحصول على الجوائز
-app.get('/api/prizes', (req, res) => {
-  res.json({ prizes: PRIZES });
+// --- 1. إنشاء قاعدة البيانات SQLite ---
+const db = new sqlite3.Database('./platform.db', (err) => {
+    if (err) console.error("خطأ في قاعدة البيانات:", err.message);
+    else console.log("تم الاتصال بقاعدة البيانات بنجاح.");
 });
 
-// API عملية التدوير
-app.post('/api/spin', (req, res) => {
-  const { userId } = req.body;
-  
-  // اختيار الجائزة
-  const result = getRandomPrize();
-  
-  res.json({
-    success: true,
-    prizeIndex: result.index,
-    prize: result.prize
-  });
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        user_id TEXT PRIMARY KEY,
+        full_name TEXT,
+        username TEXT,
+        balance REAL DEFAULT 0.0
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS investments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        plan_name TEXT,
+        amount REAL,
+        return_amount REAL,
+        end_time INTEGER,
+        status TEXT DEFAULT 'ACTIVE'
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        type TEXT,
+        method TEXT,
+        amount REAL,
+        details TEXT,
+        status TEXT DEFAULT 'PENDING'
+    )`);
 });
 
-// الصفحة الرئيسية (Telegram Mini App Frontend)
-app.get('/', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>عجلة الحظ - Telegram Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0f172a;
-      color: #fff;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      overflow: hidden;
-    }
-    h1 { margin-bottom: 20px; font-size: 24px; color: #38bdf8; text-align: center; }
-    
-    .wheel-container {
-      position: relative;
-      width: 320px;
-      height: 320px;
-      margin-bottom: 30px;
-    }
-    
-    .pointer {
-      position: absolute;
-      top: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-top: 25px solid #ef4444;
-      z-index: 10;
-    }
-    
-    canvas {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-      transition: transform 4s cubic-bezier(0.15, 0.99, 0.18, 1);
-    }
-    
-    button {
-      background: linear-gradient(135deg, #38bdf8, #2563eb);
-      color: #fff;
-      border: none;
-      padding: 14px 40px;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 30px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-      transition: transform 0.2s, opacity 0.2s;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    button:active { transform: scale(0.95); }
-    
-    #resultModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-    .modal-content {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 20px;
-      text-align: center;
-      max-width: 80%;
-      border: 1px solid #38bdf8;
-    }
-    .modal-content h2 { margin-bottom: 10px; color: #4ade80; }
-    .modal-content button { margin-top: 15px; font-size: 14px; padding: 10px 20px; }
-  </style>
-</head>
-<body>
-
-  <h1>🎯 جرب حظك واكسب!</h1>
-
-  <div class="wheel-container">
-    <div class="pointer"></div>
-    <canvas id="wheel" width="320" height="320"></canvas>
-  </div>
-
-  <button id="spinBtn">أدر العجلة الآن 🎲</button>
-
-  <div id="resultModal">
-    <div class="modal-content">
-      <h2>🎉 مبروك!</h2>
-      <p id="resultText"></p>
-      <button onclick="closeModal()">إغلاق</button>
-    </div>
-  </div>
-
-  <script>
-    const tg = window.Telegram?.WebApp;
-    if (tg) tg.expand();
-
-    let prizes = [];
-    let isSpinning = false;
-    let currentRotation = 0;
-
-    const canvas = document.getElementById('wheel');
-    const ctx = canvas.getContext('2d');
-    const spinBtn = document.getElementById('spinBtn');
-
-    // جلب الجوائز من API
-    async function loadPrizes() {
-      const res = await fetch('/api/prizes');
-      const data = await res.json();
-      prizes = data.prizes;
-      drawWheel();
-    }
-
-    function drawWheel() {
-      const numSlices = prizes.length;
-      const sliceAngle = (2 * Math.PI) / numSlices;
-
-      prizes.forEach((prize, i) => {
-        const startAngle = i * sliceAngle;
-        const endAngle = startAngle + sliceAngle;
-
-        ctx.beginPath();
-        ctx.moveTo(160, 160);
-        ctx.arc(160, 160, 160, startAngle, endAngle);
-        ctx.fillStyle = prize.color;
-        ctx.fill();
-        ctx.stroke();
-
-        // رسم النص
-        ctx.save();
-        ctx.translate(160, 160);
-        ctx.rotate(startAngle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 14px system-ui";
-        ctx.fillText(prize.text, 140, 5);
-        ctx.restore();
-      });
-    }
-
-    spinBtn.addEventListener('click', async () => {
-      if (isSpinning) return;
-      isSpinning = true;
-      spinBtn.disabled = true;
-
-      try {
-        const res = await fetch('/api/spin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: tg?.initDataUnsafe?.user?.id || 'guest' })
+// --- 2. محرك الأرباح التلقائي بعد 24 ساعة ---
+setInterval(() => {
+    const now = Date.now();
+    db.all(`SELECT * FROM investments WHERE status = 'ACTIVE' AND end_time <= ?`, [now], (err, rows) => {
+        if (err || !rows) return;
+        rows.forEach(inv => {
+            db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [inv.return_amount, inv.user_id]);
+            db.run(`UPDATE investments SET status = 'COMPLETED' WHERE id = ?`, [inv.id]);
+            bot.telegram.sendMessage(inv.user_id, `🎉 **اكتملت خطتك الاستثمارية!**\n\nالخطة: ${inv.plan_name}\nتم إضافة **$${inv.return_amount.toFixed(2)} USD** إلى محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
         });
-        const data = await res.json();
-
-        if (data.success) {
-          const sliceAngle = 360 / prizes.length;
-          // حساب زاوية الوقوف الصحيحة تحت السهم أعلى العجلة
-          const prizeIndex = data.prizeIndex;
-          const targetAngle = 360 - (prizeIndex * sliceAngle + sliceAngle / 2) - 90;
-          
-          const extraTurns = 5 * 360; // 5 دورات كاملة
-          currentRotation += extraTurns + (targetAngle - (currentRotation % 360));
-          
-          canvas.style.transform = \`rotate(\${currentRotation}deg)\`;
-
-          setTimeout(() => {
-            document.getElementById('resultText').innerText = \`حصلت على: \${data.prize.text}\`;
-            document.getElementById('resultModal').style.display = 'flex';
-            isSpinning = false;
-            spinBtn.disabled = false;
-          }, 4000);
-        }
-      } catch (e) {
-        alert("حدث خطأ أثناء الاتصال بالسيرفر!");
-        isSpinning = false;
-        spinBtn.disabled = false;
-      }
     });
+}, 30000); // يفحص كل 30 ثانية
 
-    function closeModal() {
-      document.getElementById('resultModal').style.display = 'none';
-    }
-
-    loadPrizes();
-  </script>
-</body>
-</html>
-  `);
+// --- 3. أوامر البوت ---
+bot.start((ctx) => {
+    const u = ctx.from;
+    db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
+        [u.id.toString(), u.first_name, u.username || '', u.first_name, u.username || '']);
+    
+    ctx.reply(`أهلاً بك ${u.first_name} في منصة الاستثمار السريع!`, 
+        Markup.inlineKeyboard([
+            [Markup.button.webApp("🚀 فتح المنصة VIP", process.env.VERCEL_URL || "https://your-domain.vercel.app")]
+        ])
+    );
 });
 
-// تصدير app لتشغيله كـ Serverless على Vercel
-module.exports = app;
+// --- 4. معالجة قرارات الأدمن (موافقة / رفض) ---
+bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
+    const action = ctx.match[1];
+    const type = ctx.match[2];
+    const txId = ctx.match[3];
 
-// تشغيل السيرفر محلياً عند عدم وجود Vercel
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+    db.get(`SELECT * FROM transactions WHERE id = ?`, [txId], (err, tx) => {
+        if (!tx || tx.status !== 'PENDING') {
+            return ctx.answerCbQuery("⚠️ تم معالجة هذا الطلب مسبقاً.");
+        }
+
+        if (action === 'approve') {
+            db.run(`UPDATE transactions SET status = 'APPROVED' WHERE id = ?`, [txId]);
+            if (type === 'dep') {
+                db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [tx.amount, tx.user_id]);
+                bot.telegram.sendMessage(tx.user_id, `✅ **تمت الموافقة على إيداعك!**\nتم إضافة $${tx.amount} إلى رصيدك.`, { parse_mode: 'Markdown' }).catch(() => {});
+            } else {
+                bot.telegram.sendMessage(tx.user_id, `✅ **تمت الموافقة على طلب السحب!**\nتم تحويل $${tx.amount} إلى حسابك بنجاح.`, { parse_mode: 'Markdown' }).catch(() => {});
+            }
+            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🟢 **حالة الطلب: تم القبول**`);
+        } else {
+            db.run(`UPDATE transactions SET status = 'REJECTED' WHERE id = ?`, [txId]);
+            if (type === 'wit') {
+                // إعادة المبلغ المخصوم في حالة رفض السحب
+                db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [tx.amount, tx.user_id]);
+                bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب السحب.**\nتم إعادة $${tx.amount} إلى رصيد محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
+            } else {
+                bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب الإيداع الخاص بك.**`, { parse_mode: 'Markdown' }).catch(() => {});
+            }
+            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🔴 **حالة الطلب: تم الرفض**`);
+        }
+    });
+});
+
+// --- 5. مسارات الـ API للواجهة الأمامية ---
+app.get('/api/user/:id', (req, res) => {
+    db.get(`SELECT * FROM users WHERE user_id = ?`, [req.params.id], (err, row) => {
+        res.json(row || { balance: 0.0 });
+    });
+});
+
+app.post('/api/deposit', (req, res) => {
+    const { userId, userName, amount, method, details } = req.body;
+    db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'DEPOSIT', ?, ?, ?)`,
+        [userId, method, amount, details], function(err) {
+            if (err) return res.status(500).json({ success: false });
+            const txId = this.lastID;
+            bot.telegram.sendMessage(ADMIN_ID, 
+                `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details}\``,
+                {
+                    parse_mode: 'Markdown',
+                    ...Markup.inlineKeyboard([
+                        [Markup.button.callback('✅ موافقة', `approve_dep_${txId}`), Markup.button.callback('❌ رفض', `reject_dep_${txId}`)]
+                    ])
+                }
+            ).catch(() => {});
+            res.json({ success: true });
+        });
+});
+
+app.post('/api/withdraw', (req, res) => {
+    const { userId, userName, amount, method, address } = req.body;
+    db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
+        if (!user || user.balance < amount) {
+            return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
+        }
+        // خصم المبلغ فوراً
+        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId]);
+        db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
+            [userId, method, amount, address], function(err) {
+                const txId = this.lastID;
+                bot.telegram.sendMessage(ADMIN_ID,
+                    `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
+                    {
+                        parse_mode: 'Markdown',
+                        ...Markup.inlineKeyboard([
+                            [Markup.button.callback('✅ موافقة', `approve_wit_${txId}`), Markup.button.callback('❌ رفض', `reject_wit_${txId}`)]
+                        ])
+                    }
+                ).catch(() => {});
+                res.json({ success: true });
+            });
+    });
+});
+
+bot.launch();
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`السيرفر يعمل على المنفذ ${PORT}`));
