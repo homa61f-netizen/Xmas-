@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 // --- الإعدادات الأساسية ---
-const BOT_TOKEN = process.env.BOT_TOKEN || "ضع_توكن_البوت_هنا";
-const ADMIN_ID = process.env.ADMIN_ID || "ضع_ايدي_الادمن_هنا";
+const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAGUDN9r7F9EJoOzLgbrj0wFRMjekClJzKw";
+const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const bot = new Telegraf(BOT_TOKEN);
 
 // --- 1. إنشاء قاعدة البيانات SQLite ---
