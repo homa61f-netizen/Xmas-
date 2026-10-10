@@ -11,7 +11,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAHsg7CDOZ_Dr5v2XxOXVVPZv
 const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const bot = new Telegraf(BOT_TOKEN);
 
-// قاعدة البيانات SQLite المؤقتة
+// قاعدة البيانات SQLite
 const db = new sqlite3.Database('./platform.db', (err) => {
     if (err) console.error("خطأ في قاعدة البيانات:", err.message);
 });
@@ -55,8 +55,10 @@ app.post('/api/register', (req, res) => {
     const { userId, name, username } = req.body;
     if (!userId) return res.status(400).json({ success: false });
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
-        [userId, name, username, name, username]);
-    res.json({ success: true });
+        [userId, name, username, name, username], (err) => {
+            if(err) return res.status(500).json({success: false});
+            res.json({ success: true });
+        });
 });
 
 // جلب رصيد المستخدم
@@ -76,9 +78,7 @@ app.post('/api/invest', (req, res) => {
         db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [price, userId], (err) => {
             if (err) return res.status(500).json({ success: false, error: "خطأ في الخادم" });
             
-            // إشعار للأدمن بتفعيل خطة استثمارية
             bot.telegram.sendMessage(ADMIN_ID, `📊 **استثمار جديد!**\n\n👤 المستخدم: \`${userId}\`\n🚀 الخطة: ${planName}\n💰 المبلغ الخصم: $${price} USD`, { parse_mode: 'Markdown' }).catch(() => {});
-            
             res.json({ success: true });
         });
     });
@@ -94,7 +94,7 @@ app.post('/api/deposit', (req, res) => {
             if (err) return res.status(500).json({ success: false });
             const txId = this.lastID;
             bot.telegram.sendMessage(ADMIN_ID, 
-                `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details}\``,
+                `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details || 'لا توجد'}\``,
                 {
                     parse_mode: 'Markdown',
                     ...Markup.inlineKeyboard([
@@ -113,22 +113,23 @@ app.post('/api/withdraw', (req, res) => {
         if (!user || user.balance < amount) {
             return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
         }
-        // خصم المبلغ فوراً لحين المراجعة
-        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId]);
-        db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
-            [userId, method, amount, address], function(err) {
-                const txId = this.lastID;
-                bot.telegram.sendMessage(ADMIN_ID,
-                    `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
-                    {
-                        parse_mode: 'Markdown',
-                        ...Markup.inlineKeyboard([
-                            [Markup.button.callback('✅ موافقة', `approve_wit_${txId}`), Markup.button.callback('❌ رفض', `reject_wit_${txId}`)]
-                        ])
-                    }
-                ).catch(() => {});
-                res.json({ success: true });
-            });
+        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId], (err) => {
+            if(err) return res.status(500).json({ success: false });
+            db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
+                [userId, method, amount, address], function(err) {
+                    const txId = this.lastID;
+                    bot.telegram.sendMessage(ADMIN_ID,
+                        `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
+                        {
+                            parse_mode: 'Markdown',
+                            ...Markup.inlineKeyboard([
+                                [Markup.button.callback('✅ موافقة', `approve_wit_${txId}`), Markup.button.callback('❌ رفض', `reject_wit_${txId}`)]
+                            ])
+                        }
+                    ).catch(() => {});
+                    res.json({ success: true });
+                });
+        });
     });
 });
 
@@ -151,18 +152,18 @@ bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
             } else {
                 bot.telegram.sendMessage(tx.user_id, `✅ **تمت الموافقة على طلب السحب!**\nتم تحويل $${tx.amount} إلى حسابك بنجاح.`, { parse_mode: 'Markdown' }).catch(() => {});
             }
-            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🟢 **حالة الطلب: تم القبول**`);
+            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🟢 **حالة الطلب: تم القبول**`).catch(() => {});
         } else {
             db.run(`UPDATE transactions SET status = 'REJECTED' WHERE id = ?`, [txId]);
             if (type === 'wit') {
-                // إعادة المبلغ في حال رفض السحب
                 db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [tx.amount, tx.user_id]);
                 bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب السحب.**\nتم إعادة $${tx.amount} إلى رصيد محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
             } else {
                 bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب الإيداع الخاص بك.**`, { parse_mode: 'Markdown' }).catch(() => {});
             }
-            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🔴 **حالة الطلب: تم الرفض**`);
+            ctx.editMessageText(`${ctx.callbackQuery.message.text}\n\n🔴 **حالة الطلب: تم الرفض**`).catch(() => {});
         }
+        ctx.answerCbQuery("تمت المعالجة بنجاح").catch(() => {});
     });
 });
 
