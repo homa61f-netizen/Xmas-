@@ -12,7 +12,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         :root {
-            /* Binance Pro Palette */
             --bg: #0B0E11;
             --bg-2: #12161C;
             --card: #181A20;
@@ -21,21 +20,17 @@
             --border: #2B3139;
             --border-2: #363C45;
             --border-3: #3D444D;
-
             --text: #EAECEF;
             --text-2: #848E9C;
             --text-3: #5E6673;
-
             --yellow: #FCD535;
             --yellow-2: #F0B90B;
             --yellow-bg: rgba(252, 213, 53, 0.08);
             --yellow-border: rgba(252, 213, 53, 0.25);
-
             --green: #0ECB81;
             --green-bg: rgba(14, 203, 129, 0.1);
             --red: #F6465D;
             --red-bg: rgba(246, 70, 93, 0.1);
-
             --blue: #1E88E5;
         }
 
@@ -46,7 +41,6 @@
             user-select: none;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
             font-feature-settings: "tnum" 1, "cv11" 1;
             letter-spacing: -0.01em;
         }
@@ -57,7 +51,6 @@
 
         /* ============ TOP BAR ============ */
         .topbar {
-            background: var(--bg);
             border-bottom: 1px solid var(--border);
             padding: 10px 16px;
             position: sticky;
@@ -427,13 +420,17 @@
             gap: 8px;
         }
 
-        .plan-price-block {
+        .plan-price-block,
+        .plan-profit-block,
+        .plan-return-block {
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
 
-        .plan-price-label {
+        .plan-price-label,
+        .plan-profit-label,
+        .plan-return-label {
             font-size: 9px;
             color: var(--text-3);
             font-weight: 500;
@@ -453,39 +450,11 @@
             font-size: 11px;
         }
 
-        .plan-profit-block {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .plan-profit-label {
-            font-size: 9px;
-            color: var(--text-3);
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
         .plan-profit {
             font-size: 15px;
             font-weight: 700;
             color: var(--green);
             font-family: 'Roboto Mono', monospace;
-        }
-
-        .plan-return-block {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .plan-return-label {
-            font-size: 9px;
-            color: var(--text-3);
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
         }
 
         .plan-return {
@@ -581,9 +550,7 @@
         .modal-close:hover { background: var(--border); color: var(--text); }
 
         /* ============ FORM ============ */
-        .field {
-            margin-bottom: 14px;
-        }
+        .field { margin-bottom: 14px; }
 
         .field-label {
             font-size: 11px;
@@ -725,6 +692,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex: 1;
+            min-width: 0;
         }
 
         .history-icon {
@@ -735,28 +704,28 @@
             align-items: center;
             justify-content: center;
             font-size: 13px;
+            flex-shrink: 0;
         }
 
-        .history-icon.dep {
-            background: var(--green-bg);
-            color: var(--green);
-        }
-
-        .history-icon.wit {
-            background: var(--red-bg);
-            color: var(--red);
-        }
+        .history-icon.dep { background: var(--green-bg); color: var(--green); }
+        .history-icon.wit { background: var(--red-bg); color: var(--red); }
+        .history-icon.inv { background: var(--yellow-bg); color: var(--yellow); }
 
         .history-info {
             display: flex;
             flex-direction: column;
             gap: 2px;
+            min-width: 0;
         }
 
         .history-title {
             font-size: 13px;
             font-weight: 600;
             color: var(--text);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
         .history-date {
@@ -770,10 +739,25 @@
             font-weight: 700;
             font-family: 'Roboto Mono', monospace;
             text-align: left;
+            flex-shrink: 0;
         }
 
         .history-amount.dep { color: var(--green); }
         .history-amount.wit { color: var(--red); }
+        .history-amount.inv { color: var(--yellow); }
+
+        .status-badge {
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .status-pending { color: var(--yellow); background: var(--yellow-bg); }
+        .status-approved { color: var(--green); background: var(--green-bg); }
+        .status-rejected { color: var(--red); background: var(--red-bg); }
+        .status-active { color: var(--yellow); background: var(--yellow-bg); }
+        .status-completed { color: var(--green); background: var(--green-bg); }
 
         .history-empty {
             text-align: center;
@@ -924,7 +908,7 @@
     let currentBalance = 0;
     let balanceVisible = true;
 
-    // Load user data
+    // Load user data from Telegram
     if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
         const u = tg.initDataUnsafe.user;
         userData = {
@@ -938,11 +922,18 @@
         if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
     }
 
+    // Register user
     fetch('/api/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(userData)
-    }).then(() => loadBalance()).catch(err => console.error('register err:', err));
+    })
+    .then(() => {
+        loadBalance();
+        // Auto-refresh every 30 seconds
+        setInterval(loadBalance, 30000);
+    })
+    .catch(err => console.error('register err:', err));
 
     const WALLETS = {
         TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3",
@@ -958,9 +949,21 @@
                 currentBalance = d.balance || 0;
                 const el = document.getElementById('user-balance');
                 if (balanceVisible) el.innerText = currentBalance.toFixed(2);
-                document.getElementById('stat-total').innerText = '$' + currentBalance.toFixed(2);
             })
+            .then(() => loadStats())
             .catch(err => console.error('balance err:', err));
+    }
+
+    function loadStats() {
+        if (!userData.id) return;
+        fetch(`/api/user/${userData.id}/stats`)
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('stat-plans').innerText = d.activePlans || 0;
+                document.getElementById('stat-profit').innerText = '$' + (d.totalProfit || '0.00');
+                document.getElementById('stat-total').innerText = '$' + (d.totalDeposit || '0.00');
+            })
+            .catch(err => console.error('stats err:', err));
     }
 
     function toggleBalance() {
@@ -1052,7 +1055,12 @@
         .then(d => {
             if (d.success) {
                 loadBalance();
-                tg.showAlert(`تم تفعيل خطة ${name} بنجاح`);
+                tg.showAlert(
+                    `تم تفعيل خطة ${name} بنجاح!\n\n` +
+                    `💰 المبلغ: $${price}\n` +
+                    `📈 العائد: $${d.investment.returnAmount}\n` +
+                    `⏰ تُضاف الأرباح تلقائياً خلال 24 ساعة`
+                );
             } else {
                 tg.showAlert(d.error || 'حدث خطأ.');
             }
@@ -1062,35 +1070,80 @@
 
     function loadHistory() {
         const container = document.getElementById('history-container');
-        // للتجربة — سجل ثابت
-        const items = JSON.parse(localStorage.getItem('vip_history_' + userData.id) || '[]');
-        document.getElementById('history-count').innerText = items.length + ' عملية';
+        fetch(`/api/user/${userData.id}/history`)
+            .then(r => r.json())
+            .then(items => {
+                document.getElementById('history-count').innerText = items.length + ' عملية';
 
-        if (items.length === 0) {
-            container.innerHTML = `
-                <div class="history-empty">
-                    <i class="fa-solid fa-receipt"></i>
-                    لا توجد عمليات بعد
-                </div>`;
-            return;
-        }
+                if (items.length === 0) {
+                    container.innerHTML = `
+                        <div class="history-empty">
+                            <i class="fa-solid fa-receipt"></i>
+                            لا توجد عمليات بعد
+                        </div>`;
+                    return;
+                }
 
-        container.innerHTML = items.map(item => `
-            <div class="history-item">
-                <div class="history-left">
-                    <div class="history-icon ${item.type === 'DEPOSIT' ? 'dep' : 'wit'}">
-                        <i class="fa-solid fa-arrow-${item.type === 'DEPOSIT' ? 'down' : 'up'}"></i>
-                    </div>
-                    <div class="history-info">
-                        <div class="history-title">${item.type === 'DEPOSIT' ? 'إيداع' : 'سحب'}</div>
-                        <div class="history-date">${item.date}</div>
-                    </div>
-                </div>
-                <div class="history-amount ${item.type === 'DEPOSIT' ? 'dep' : 'wit'}">
-                    ${item.type === 'DEPOSIT' ? '+' : '-'}$${item.amount.toFixed(2)}
-                </div>
-            </div>
-        `).join('');
+                container.innerHTML = items.map(item => {
+                    let icon, iconClass, title, amountClass, amountSign;
+
+                    if (item.type === 'DEPOSIT') {
+                        icon = 'fa-arrow-down';
+                        iconClass = 'dep';
+                        title = 'إيداع';
+                        amountClass = 'dep';
+                        amountSign = '+';
+                    } else if (item.type === 'WITHDRAW') {
+                        icon = 'fa-arrow-up';
+                        iconClass = 'wit';
+                        title = 'سحب';
+                        amountClass = 'wit';
+                        amountSign = '-';
+                    } else {
+                        icon = 'fa-rocket';
+                        iconClass = 'inv';
+                        title = `خطة ${item.method}`;
+                        amountClass = 'inv';
+                        amountSign = '-';
+                    }
+
+                    const statusMap = {
+                        'PENDING':   { text: 'قيد المراجعة', cls: 'status-pending' },
+                        'APPROVED':  { text: 'مكتمل',        cls: 'status-approved' },
+                        'COMPLETED': { text: 'مكتمل',        cls: 'status-completed' },
+                        'ACTIVE':    { text: 'نشط',          cls: 'status-active' },
+                        'REJECTED':  { text: 'مرفوض',        cls: 'status-rejected' }
+                    };
+                    const st = statusMap[item.status] || { text: item.status, cls: '' };
+                    const statusBadge = `<span class="status-badge ${st.cls}">${st.text}</span>`;
+
+                    const date = new Date(item.created_at).toLocaleString('ar-EG', {
+                        dateStyle: 'short',
+                        timeStyle: 'short'
+                    });
+
+                    return `
+                        <div class="history-item">
+                            <div class="history-left">
+                                <div class="history-icon ${iconClass}">
+                                    <i class="fa-solid ${icon}"></i>
+                                </div>
+                                <div class="history-info">
+                                    <div class="history-title">${title} ${statusBadge}</div>
+                                    <div class="history-date">${date}</div>
+                                </div>
+                            </div>
+                            <div class="history-amount ${amountClass}">
+                                ${amountSign}$${item.amount.toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            })
+            .catch(err => {
+                console.error('history err:', err);
+                container.innerHTML = `<div class="history-empty"><i class="fa-solid fa-triangle-exclamation"></i>فشل تحميل السجل</div>`;
+            });
     }
 
     function openModal(type) {
@@ -1107,7 +1160,7 @@
                 </div>
                 <div class="field">
                     <label class="field-label">شبكة الإيداع</label>
-                    <select id="dep-method" onchange="updateWallet('dep')" class="select">
+                    <select id="dep-method" onchange="updateWallet()" class="select">
                         <option value="TRC20">USDT — TRC20</option>
                         <option value="BEP20">USDT — BEP20</option>
                         <option value="VODAFONE">فودافون كاش</option>
@@ -1172,17 +1225,6 @@
         });
     }
 
-    function addHistory(type, amount) {
-        const key = 'vip_history_' + userData.id;
-        const items = JSON.parse(localStorage.getItem(key) || '[]');
-        items.unshift({
-            type: type,
-            amount: amount,
-            date: new Date().toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
-        });
-        localStorage.setItem(key, JSON.stringify(items.slice(0, 50)));
-    }
-
     function submitDep() {
         const amt = parseFloat(document.getElementById('dep-amt').value);
         if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
@@ -1198,9 +1240,9 @@
             })
         })
         .then(() => {
-            addHistory('DEPOSIT', amt);
             closeModal();
             tg.showAlert('تم إرسال طلب الإيداع للمراجعة');
+            setTimeout(loadHistory, 1000);
         })
         .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
@@ -1223,9 +1265,9 @@
         .then(d => {
             closeModal();
             if (d.success) {
-                addHistory('WITHDRAW', amt);
                 loadBalance();
                 tg.showAlert('تم إرسال طلب السحب');
+                setTimeout(loadHistory, 1000);
             } else {
                 tg.showAlert(d.error || 'الرصيد غير كافٍ');
             }
