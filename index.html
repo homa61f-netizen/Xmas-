@@ -26,14 +26,11 @@
 </head>
 <body class="pb-20 max-w-md mx-auto relative min-h-screen">
 
-    <!-- شاشة الحظر المشددة: تمنع فتح الموقع خارج تليجرام نهائياً -->
-    <div id="block-screen" class="fixed inset-0 bg-[#181A20] z-50 flex flex-col items-center justify-center p-6 text-center">
+    <!-- شاشة الحظر إذا فتحت خارج تليجرام -->
+    <div id="block-screen" class="fixed inset-0 bg-[#181A20] z-50 flex flex-col items-center justify-center p-6 text-center hidden">
         <i class="fa-brands fa-telegram text-binance-yellow text-6xl mb-4 animate-bounce"></i>
         <h1 class="text-white text-base font-bold mb-2">منصة محمية حصرياً لتليجرام</h1>
-        <p class="text-binance-textGray text-xs mb-6">لا يمكن فتح هذه المنصة من المتصفح الخارجي. يرجى الدخول من داخل تطبيق تليجرام عبر البوت.</p>
-        <div id="bot-link-box" class="hidden">
-            <a href="#" id="bot-direct-link" class="bg-binance-yellow text-black font-extrabold px-6 py-2.5 rounded-lg text-xs">افتح البوت الآن</a>
-        </div>
+        <p class="text-binance-textGray text-xs mb-6">يرجى الدخول من داخل تطبيق تليجرام عبر البوت الرسمي.</p>
     </div>
 
     <!-- Header -->
@@ -83,20 +80,15 @@
         tg.ready();
 
         let userData = { id: "", name: "", username: "" };
+        let currentBalance = 0;
 
-        // التحقق القاسي من فتح التطبيق داخل تليجرام حصرياً
         if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-            // إخفاء شاشة الحظر تماماً لأن المستخدم دخل من تليجرام
-            document.getElementById('block-screen').classList.add('hidden');
-
             const u = tg.initDataUnsafe.user;
             userData = { id: u.id.toString(), name: u.first_name, username: u.username || 'NoUsername' };
-            
             document.getElementById('user-fullname').innerText = `${u.first_name || ''} ${u.last_name || ''}`.trim();
             document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
             if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
 
-            // تسجيل الحساب في السيرفر
             fetch('/api/register', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -105,7 +97,6 @@
 
             loadBalance();
         } else {
-            // يبقي شاشة الحظر ظاهرة ولا يفعل أي شيء
             document.getElementById('block-screen').classList.remove('hidden');
         }
 
@@ -114,7 +105,8 @@
         function loadBalance() {
             if(!userData.id) return;
             fetch(`/api/user/${userData.id}`).then(r => r.json()).then(d => {
-                document.getElementById('user-balance').innerText = (d.balance || 0).toFixed(2);
+                currentBalance = d.balance || 0;
+                document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
             });
         }
 
@@ -134,9 +126,41 @@
                         <h3 class="text-xs font-bold text-white">${p.name}</h3>
                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
-                    <button onclick="tg.showAlert('تم إرسال الخطة بنجاح')" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                    <button onclick="activatePlan('${p.name}', ${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
         });
+
+        // نظام احترافي لتفعيل الخطة والتحقق من الرصيد
+        function activatePlan(name, price) {
+            if (currentBalance < price) {
+                tg.showAlert(`⚠️ عذراً، رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}.\n\nالرجاء إيداع رصيد كافٍ أولاً.`);
+                openModal('deposit');
+                // تعبئة المبلغ تلقائياً في خانة الإيداع
+                setTimeout(() => {
+                    const amtInput = document.getElementById('dep-amt');
+                    if(amtInput) amtInput.value = price - currentBalance;
+                }, 300);
+                return;
+            }
+
+            tg.showConfirm(`هل أنت متأكد من تفعيل خطة ${name} بمبلغ $${price}؟\nسيتم خصم المبلغ وبدء العد التنازلي للأرباح.`, (ok) => {
+                if(ok) {
+                    // إرسال طلب تفعيل الخطة للسيرفر
+                    fetch('/api/invest', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ userId: userData.id, planName: name, price: price })
+                    }).then(r => r.json()).then(d => {
+                        if(d.success) {
+                            loadBalance();
+                            tg.showAlert(`🚀 تم تفعيل ${name} بنجاح!\nستحصل على أرباحك تلقائياً بعد 24 ساعة.`);
+                        } else {
+                            tg.showAlert(d.error || 'حدث خطأ أثناء التفعيل.');
+                        }
+                    });
+                }
+            });
+        }
 
         function openModal(type) {
             document.getElementById('modal-overlay').classList.remove('hidden');
@@ -196,8 +220,8 @@
                 })
             }).then(r => r.json()).then(d => {
                 closeModal();
-                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); }
-                else { tg.showAlert(d.error || 'عذراً، حدث خطأ.'); }
+                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); });
+                else { tg.showAlert(d.error || 'عذراً، الرصيد غير كافٍ.'); }
             });
         }
 
