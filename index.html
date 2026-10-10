@@ -3,40 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIP INVEST PRO</title>
+    <meta name="theme-color" content="#0B0E11">
+    <title>VIP Invest Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         :root {
+            /* Binance Pro Palette */
             --bg: #0B0E11;
+            --bg-2: #12161C;
             --card: #181A20;
             --card-2: #1E2329;
+            --card-3: #22262E;
             --border: #2B3139;
             --border-2: #363C45;
+            --border-3: #3D444D;
+
             --text: #EAECEF;
             --text-2: #848E9C;
             --text-3: #5E6673;
+
             --yellow: #FCD535;
             --yellow-2: #F0B90B;
-            --yellow-dark: #3A2F0B;
+            --yellow-bg: rgba(252, 213, 53, 0.08);
+            --yellow-border: rgba(252, 213, 53, 0.25);
+
             --green: #0ECB81;
-            --green-dark: #0B2B22;
+            --green-bg: rgba(14, 203, 129, 0.1);
             --red: #F6465D;
+            --red-bg: rgba(246, 70, 93, 0.1);
+
+            --blue: #1E88E5;
         }
 
         html, body {
-            font-family: 'IBM Plex Sans Arabic', 'Inter', -apple-system, sans-serif;
+            font-family: 'IBM Plex Sans Arabic', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
             color: var(--text);
             user-select: none;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: "tnum" 1, "cv11" 1;
+            letter-spacing: -0.01em;
         }
 
-        .num { font-family: 'Roboto Mono', monospace; font-feature-settings: "tnum"; }
+        .num { font-family: 'Roboto Mono', 'Inter', monospace; letter-spacing: -0.02em; }
 
         ::-webkit-scrollbar { display: none; }
 
@@ -44,10 +59,13 @@
         .topbar {
             background: var(--bg);
             border-bottom: 1px solid var(--border);
-            padding: 12px 16px;
+            padding: 10px 16px;
             position: sticky;
             top: 0;
             z-index: 40;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(11, 14, 17, 0.92);
         }
 
         .topbar-inner {
@@ -60,38 +78,61 @@
 
         .user-wrap { display: flex; align-items: center; gap: 10px; }
 
+        .avatar-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .avatar {
-            width: 36px; height: 36px;
+            width: 34px; height: 34px;
             border-radius: 50%;
             object-fit: cover;
             border: 1px solid var(--border-2);
+        }
+
+        .avatar-dot {
+            position: absolute;
+            bottom: -1px;
+            left: -1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            border: 2px solid var(--bg);
         }
 
         .user-name {
             font-size: 13px;
             font-weight: 600;
             color: var(--text);
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         .user-handle {
             font-size: 11px;
             color: var(--text-2);
             font-weight: 500;
-            margin-top: 2px;
+            margin-top: 1px;
             display: block;
         }
 
         .badge-vip {
-            background: var(--yellow-dark);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--yellow-bg);
             color: var(--yellow);
             font-size: 10px;
             font-weight: 700;
             padding: 4px 8px;
             border-radius: 4px;
             letter-spacing: 0.3px;
-            border: 1px solid rgba(252, 213, 53, 0.2);
+            border: 1px solid var(--yellow-border);
         }
+
+        .badge-vip i { font-size: 9px; }
 
         /* ============ CONTAINER ============ */
         .container {
@@ -100,54 +141,129 @@
             padding: 16px;
         }
 
+        /* ============ TABS ============ */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--card-2);
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-2);
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+
+        .tab.active {
+            background: var(--bg);
+            color: var(--text);
+        }
+
         /* ============ BALANCE SECTION ============ */
         .balance-section {
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+            padding: 20px;
+            background: linear-gradient(180deg, var(--card) 0%, var(--bg-2) 100%);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-section::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 140px; height: 140px;
+            background: radial-gradient(circle, rgba(252, 213, 53, 0.06), transparent 70%);
+            pointer-events: none;
+        }
+
+        .balance-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
 
         .balance-label {
             font-size: 12px;
             color: var(--text-2);
             font-weight: 500;
-            margin-bottom: 6px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .balance-label i { font-size: 11px; }
+        .balance-label i { font-size: 11px; color: var(--text-3); }
+
+        .balance-eye {
+            background: transparent;
+            border: none;
+            color: var(--text-3);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px;
+        }
 
         .balance-value {
             display: flex;
             align-items: baseline;
-            gap: 6px;
-            margin-bottom: 18px;
+            gap: 8px;
+            margin-bottom: 4px;
         }
 
         .balance-num {
-            font-size: 34px;
+            font-size: 32px;
             font-weight: 700;
             color: var(--text);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.03em;
             font-family: 'Roboto Mono', monospace;
+            line-height: 1;
         }
 
         .balance-currency {
             font-size: 14px;
             font-weight: 600;
             color: var(--text-2);
+            letter-spacing: 0.02em;
         }
+
+        .balance-change {
+            font-size: 11px;
+            color: var(--text-3);
+            font-weight: 500;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .balance-change .up { color: var(--green); }
+        .balance-change .down { color: var(--red); }
 
         .balance-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
         }
 
         .btn {
-            padding: 12px 16px;
+            padding: 11px 12px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
@@ -156,10 +272,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        .btn:active { transform: scale(0.98); }
+        .btn:active { transform: scale(0.97); }
+        .btn i { font-size: 12px; }
 
         .btn-primary {
             background: var(--yellow);
@@ -168,71 +285,117 @@
         .btn-primary:hover { background: var(--yellow-2); }
 
         .btn-secondary {
-            background: var(--card-2);
+            background: var(--card-3);
             color: var(--text);
             border: 1px solid var(--border-2);
         }
-        .btn-secondary:hover { background: #252A32; }
+        .btn-secondary:hover { background: var(--border); }
 
         /* ============ SECTION HEADER ============ */
         .section-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
-            margin-top: 8px;
+            margin-bottom: 14px;
+            padding: 0 2px;
         }
 
         .section-title {
             font-size: 15px;
             font-weight: 600;
             color: var(--text);
+            letter-spacing: -0.01em;
         }
 
-        .section-tag {
-            font-size: 11px;
+        .section-link {
+            font-size: 12px;
             color: var(--text-2);
             font-weight: 500;
-            background: var(--card-2);
-            padding: 3px 8px;
-            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        /* ============ PLAN ROW ============ */
+        .section-link:hover { color: var(--yellow); }
+        .section-link i { font-size: 10px; }
+
+        /* ============ STATS ROW ============ */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Roboto Mono', monospace;
+            margin-bottom: 3px;
+        }
+
+        .stat-value.green { color: var(--green); }
+        .stat-value.yellow { color: var(--yellow); }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-3);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        /* ============ PLANS ============ */
         .plans-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .plan-row {
+        .plan-card {
             background: var(--card-2);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            transition: border-color 0.15s ease;
+            border-radius: 12px;
+            padding: 14px;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .plan-row:hover { border-color: var(--border-2); }
-
-        .plan-row.plan-featured {
-            border-color: rgba(252, 213, 53, 0.4);
-            background: linear-gradient(90deg, rgba(252, 213, 53, 0.04) 0%, var(--card-2) 30%);
+        .plan-card.featured {
+            border-color: var(--yellow-border);
+            background: linear-gradient(90deg, rgba(252, 213, 53, 0.03) 0%, var(--card-2) 25%);
         }
 
-        .plan-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-            min-width: 0;
+        .plan-card.featured::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; right: 0;
+            width: 2px;
+            background: linear-gradient(180deg, transparent, var(--yellow), transparent);
         }
 
         .plan-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .plan-name-wrap {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -240,61 +403,95 @@
 
         .plan-name {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text);
-            letter-spacing: 0.3px;
+            letter-spacing: 0.02em;
         }
 
-        .plan-badge {
+        .plan-tier {
             font-size: 9px;
             font-weight: 700;
             padding: 2px 6px;
             border-radius: 3px;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
 
-        .badge-hot {
-            background: rgba(246, 70, 93, 0.15);
-            color: var(--red);
-        }
+        .tier-hot { background: var(--red-bg); color: var(--red); }
+        .tier-new { background: var(--green-bg); color: var(--green); }
+        .tier-featured { background: var(--yellow-bg); color: var(--yellow); }
 
-        .badge-new {
-            background: rgba(14, 203, 129, 0.15);
-            color: var(--green);
-        }
-
-        .badge-featured {
-            background: rgba(252, 213, 53, 0.15);
-            color: var(--yellow);
-        }
-
-        .plan-meta {
+        .plan-numbers {
             display: flex;
-            align-items: baseline;
-            gap: 10px;
-            font-size: 12px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .plan-price-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .plan-price-label {
+            font-size: 9px;
+            color: var(--text-3);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .plan-price {
-            color: var(--text-2);
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Roboto Mono', monospace;
         }
 
-        .plan-price b {
-            color: var(--text);
-            font-weight: 600;
+        .plan-arrow {
+            color: var(--text-3);
+            font-size: 11px;
+        }
+
+        .plan-profit-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .plan-profit-label {
+            font-size: 9px;
+            color: var(--text-3);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .plan-profit {
+            font-size: 15px;
+            font-weight: 700;
             color: var(--green);
-            font-weight: 600;
             font-family: 'Roboto Mono', monospace;
-            font-size: 12px;
+        }
+
+        .plan-return-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .plan-return-label {
+            font-size: 9px;
+            color: var(--text-3);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .plan-return {
-            color: var(--text-3);
-            font-size: 11px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--yellow);
             font-family: 'Roboto Mono', monospace;
         }
 
@@ -302,7 +499,7 @@
             background: var(--yellow);
             color: #0B0E11;
             font-weight: 700;
-            padding: 8px 18px;
+            padding: 8px 16px;
             border-radius: 6px;
             font-size: 12px;
             border: none;
@@ -319,7 +516,9 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 100;
             display: none;
             align-items: flex-end;
@@ -333,8 +532,8 @@
             border-radius: 16px 16px 0 0;
             padding: 20px;
             border-top: 1px solid var(--border-2);
-            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 90vh;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 92vh;
             overflow-y: auto;
         }
 
@@ -343,35 +542,43 @@
             to { transform: translateY(0); }
         }
 
+        .modal-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--border-2);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+
         .modal-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
         }
 
         .modal-title {
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             color: var(--text);
+            letter-spacing: -0.01em;
         }
 
         .modal-close {
-            background: transparent;
+            background: var(--card-3);
             border: none;
             color: var(--text-2);
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            font-size: 16px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.15s;
         }
-        .modal-close:hover { background: var(--card); color: var(--text); }
+        .modal-close:hover { background: var(--border); color: var(--text); }
 
         /* ============ FORM ============ */
         .field {
@@ -379,11 +586,12 @@
         }
 
         .field-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-2);
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 6px;
             display: block;
+            letter-spacing: 0.02em;
         }
 
         .input, .select {
@@ -391,7 +599,7 @@
             background: var(--card);
             border: 1px solid var(--border);
             color: var(--text);
-            padding: 11px 14px;
+            padding: 12px 14px;
             border-radius: 8px;
             font-size: 13px;
             font-family: inherit;
@@ -401,6 +609,7 @@
         .input:focus, .select:focus {
             outline: none;
             border-color: var(--yellow);
+            box-shadow: 0 0 0 3px var(--yellow-bg);
         }
 
         .input::placeholder { color: var(--text-3); }
@@ -420,13 +629,33 @@
             background: var(--card);
             border: 1px solid var(--border);
             color: var(--yellow);
-            padding: 11px 14px;
+            padding: 12px 14px;
             border-radius: 8px;
             font-size: 11px;
             font-family: 'Roboto Mono', monospace;
             word-break: break-all;
             line-height: 1.5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
         }
+
+        .copy-btn {
+            background: var(--card-3);
+            border: none;
+            color: var(--text-2);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .copy-btn:hover { color: var(--yellow); }
 
         .btn-full {
             width: 100%;
@@ -438,6 +667,7 @@
             cursor: pointer;
             border: none;
             transition: all 0.15s ease;
+            letter-spacing: -0.01em;
         }
 
         .btn-full-primary {
@@ -452,13 +682,111 @@
         }
         .btn-full-green:active { transform: scale(0.98); }
 
-        /* ============ EMPTY STATE ============ */
+        /* ============ INFO NOTE ============ */
+        .info-note {
+            display: flex;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--yellow-bg);
+            border: 1px solid var(--yellow-border);
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 11px;
+            color: var(--text-2);
+            line-height: 1.5;
+        }
+
+        .info-note i { color: var(--yellow); margin-top: 2px; font-size: 12px; flex-shrink: 0; }
+
+        /* ============ FOOTER ============ */
         .footer {
             text-align: center;
             padding: 24px 0 12px;
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* ============ HISTORY ============ */
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .history-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .history-icon.dep {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .history-icon.wit {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .history-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .history-date {
             font-size: 11px;
             color: var(--text-3);
-            letter-spacing: 0.3px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .history-amount {
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            text-align: left;
+        }
+
+        .history-amount.dep { color: var(--green); }
+        .history-amount.wit { color: var(--red); }
+
+        .history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-3);
+            font-size: 12px;
+        }
+
+        .history-empty i {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 12px;
+            opacity: 0.4;
         }
     </style>
 </head>
@@ -468,48 +796,107 @@
 <div class="topbar">
     <div class="topbar-inner">
         <div class="user-wrap">
-            <img id="user-avatar" class="avatar" src="https://ui-avatars.com/api/?name=U&background=1E2329&color=FCD535&bold=true">
+            <div class="avatar-wrap">
+                <img id="user-avatar" class="avatar" src="https://ui-avatars.com/api/?name=U&background=1E2329&color=FCD535&bold=true">
+                <div class="avatar-dot"></div>
+            </div>
             <div>
                 <div id="user-fullname" class="user-name">مستخدم</div>
                 <span id="user-username" class="user-handle">@username</span>
             </div>
         </div>
-        <span class="badge-vip">VIP</span>
+        <span class="badge-vip"><i class="fa-solid fa-crown"></i> VIP</span>
     </div>
 </div>
 
 <div class="container">
 
-    <!-- Balance -->
-    <section class="balance-section">
-        <div class="balance-label">
-            <i class="fa-solid fa-wallet"></i>
-            إجمالي الأصول
-        </div>
-        <div class="balance-value">
-            <span class="balance-num" id="user-balance">0.00</span>
-            <span class="balance-currency">USD</span>
-        </div>
-        <div class="balance-actions">
-            <button onclick="openModal('deposit')" class="btn btn-primary">
-                <i class="fa-solid fa-arrow-down-to-line"></i> إيداع
-            </button>
-            <button onclick="openModal('withdraw')" class="btn btn-secondary">
-                <i class="fa-solid fa-arrow-up-from-line"></i> سحب
-            </button>
-        </div>
-    </section>
-
-    <!-- Plans -->
-    <div class="section-head">
-        <div class="section-title">خطط الاستثمار</div>
-        <div class="section-tag">24 ساعة</div>
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('home', this)">الرئيسية</button>
+        <button class="tab" onclick="switchTab('history', this)">السجل</button>
     </div>
 
-    <div class="plans-list" id="plans-container"></div>
+    <!-- HOME TAB -->
+    <div id="tab-home">
+
+        <!-- Balance Card -->
+        <section class="balance-section">
+            <div class="balance-head">
+                <div class="balance-label">
+                    <i class="fa-solid fa-wallet"></i>
+                    إجمالي الأصول
+                </div>
+                <button class="balance-eye" onclick="toggleBalance()">
+                    <i class="fa-solid fa-eye" id="eye-icon"></i>
+                </button>
+            </div>
+            <div class="balance-value">
+                <span class="balance-num" id="user-balance">0.00</span>
+                <span class="balance-currency">USD</span>
+            </div>
+            <div class="balance-change">
+                <span class="up"><i class="fa-solid fa-arrow-up" style="font-size:9px;"></i> 0.00%</span>
+                <span>·</span>
+                <span>آخر 24 ساعة</span>
+            </div>
+            <div class="balance-actions">
+                <button onclick="openModal('deposit')" class="btn btn-primary">
+                    <i class="fa-solid fa-arrow-down"></i> إيداع
+                </button>
+                <button onclick="openModal('withdraw')" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-up"></i> سحب
+                </button>
+                <button onclick="switchTab('history', document.querySelectorAll('.tab')[1])" class="btn btn-secondary">
+                    <i class="fa-solid fa-clock-rotate-left"></i> السجل
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value yellow" id="stat-plans">0</div>
+                <div class="stat-label">خطط نشطة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="stat-profit">$0.00</div>
+                <div class="stat-label">إجمالي الأرباح</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">$0.00</div>
+                <div class="stat-label">إجمالي الإيداع</div>
+            </div>
+        </div>
+
+        <!-- Plans Header -->
+        <div class="section-head">
+            <div class="section-title">خطط الاستثمار</div>
+            <button class="section-link" onclick="openModal('deposit')">
+                ابدأ الآن <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <!-- Plans -->
+        <div class="plans-list" id="plans-container"></div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="tab-history" style="display:none;">
+        <div class="section-head">
+            <div class="section-title">سجل العمليات</div>
+            <span class="section-link" id="history-count">0 عملية</span>
+        </div>
+        <div id="history-container">
+            <div class="history-empty">
+                <i class="fa-solid fa-receipt"></i>
+                لا توجد عمليات بعد
+            </div>
+        </div>
+    </div>
 
     <div class="footer">
-        VIP INVEST PRO · SECURED PLATFORM
+        VIP INVEST PRO · SECURED BY DESIGN
     </div>
 
 </div>
@@ -517,6 +904,7 @@
 <!-- Modal -->
 <div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal">
+        <div class="modal-handle"></div>
         <div class="modal-head">
             <div id="modal-title" class="modal-title">إيداع</div>
             <button onclick="closeModal()" class="modal-close">
@@ -534,7 +922,9 @@
 
     let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
     let currentBalance = 0;
+    let balanceVisible = true;
 
+    // Load user data
     if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
         const u = tg.initDataUnsafe.user;
         userData = {
@@ -566,49 +956,85 @@
             .then(r => r.json())
             .then(d => {
                 currentBalance = d.balance || 0;
-                document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
+                const el = document.getElementById('user-balance');
+                if (balanceVisible) el.innerText = currentBalance.toFixed(2);
+                document.getElementById('stat-total').innerText = '$' + currentBalance.toFixed(2);
             })
             .catch(err => console.error('balance err:', err));
     }
 
-    // الخطط — أقل خطة 30%
+    function toggleBalance() {
+        balanceVisible = !balanceVisible;
+        const el = document.getElementById('user-balance');
+        const icon = document.getElementById('eye-icon');
+        if (balanceVisible) {
+            el.innerText = currentBalance.toFixed(2);
+            icon.className = 'fa-solid fa-eye';
+        } else {
+            el.innerText = '••••••';
+            icon.className = 'fa-solid fa-eye-slash';
+        }
+    }
+
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-home').style.display = tab === 'home' ? 'block' : 'none';
+        document.getElementById('tab-history').style.display = tab === 'history' ? 'block' : 'none';
+        if (tab === 'history') loadHistory();
+    }
+
+    // Plans — lowest 30%
     const plans = [
-        { name: "STARTER",   price: 10,   profit: 30, returnAmt: 13.00,   featured: false, badge: null },
-        { name: "PRO",       price: 50,   profit: 35, returnAmt: 67.50,   featured: false, badge: "HOT" },
-        { name: "VIP",       price: 100,  profit: 40, returnAmt: 140.00,  featured: true,  badge: "FEATURED" },
-        { name: "ELITE",     price: 500,  profit: 50, returnAmt: 750.00,  featured: false, badge: null },
-        { name: "DIAMOND",   price: 1000, profit: 60, returnAmt: 1600.00, featured: false, badge: null },
-        { name: "BLACK VIP", price: 5000, profit: 80, returnAmt: 9000.00, featured: false, badge: "NEW" }
+        { name: "STARTER",   price: 10,   profit: 30, returnAmt: 13.00,   tier: null,       featured: false },
+        { name: "PRO",       price: 50,   profit: 35, returnAmt: 67.50,   tier: "HOT",      featured: false },
+        { name: "VIP",       price: 100,  profit: 40, returnAmt: 140.00,  tier: "FEATURED", featured: true },
+        { name: "ELITE",     price: 500,  profit: 50, returnAmt: 750.00,  tier: null,       featured: false },
+        { name: "DIAMOND",   price: 1000, profit: 60, returnAmt: 1600.00, tier: null,       featured: false },
+        { name: "BLACK VIP", price: 5000, profit: 80, returnAmt: 9000.00, tier: "NEW",      featured: false }
     ];
 
-    const container = document.getElementById('plans-container');
-    plans.forEach(p => {
-        const badgeClass = p.badge === 'HOT' ? 'badge-hot' : p.badge === 'NEW' ? 'badge-new' : 'badge-featured';
-        const badgeHTML = p.badge ? `<span class="plan-badge ${badgeClass}">${p.badge}</span>` : '';
-        const featuredClass = p.featured ? 'plan-featured' : '';
-
-        container.innerHTML += `
-            <div class="plan-row ${featuredClass}">
-                <div class="plan-info">
+    function renderPlans() {
+        const container = document.getElementById('plans-container');
+        container.innerHTML = plans.map(p => {
+            const tierClass = p.tier === 'HOT' ? 'tier-hot' : p.tier === 'NEW' ? 'tier-new' : 'tier-featured';
+            const tierHTML = p.tier ? `<span class="plan-tier ${tierClass}">${p.tier}</span>` : '';
+            const featuredClass = p.featured ? 'featured' : '';
+            return `
+                <div class="plan-card ${featuredClass}">
                     <div class="plan-top">
-                        <span class="plan-name">${p.name}</span>
-                        ${badgeHTML}
+                        <div class="plan-name-wrap">
+                            <span class="plan-name">${p.name}</span>
+                            ${tierHTML}
+                        </div>
+                        <button onclick="activatePlan('${p.name}',${p.price})" class="btn-activate">تفعيل</button>
                     </div>
-                    <div class="plan-meta">
-                        <span class="plan-price">سعر: <b>$${p.price.toLocaleString()}</b></span>
-                        <span class="plan-profit">+${p.profit}%</span>
-                        <span class="plan-return">→ $${p.returnAmt.toLocaleString()}</span>
+                    <div class="plan-numbers">
+                        <div class="plan-price-block">
+                            <span class="plan-price-label">سعر</span>
+                            <span class="plan-price num">$${p.price.toLocaleString()}</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-left plan-arrow"></i>
+                        <div class="plan-profit-block">
+                            <span class="plan-profit-label">ربح</span>
+                            <span class="plan-profit num">+${p.profit}%</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-left plan-arrow"></i>
+                        <div class="plan-return-block">
+                            <span class="plan-return-label">عائد</span>
+                            <span class="plan-return num">$${p.returnAmt.toLocaleString()}</span>
+                        </div>
                     </div>
                 </div>
-                <button onclick="activatePlan('${p.name}',${p.price})" class="btn-activate">
-                    تفعيل
-                </button>
-            </div>`;
-    });
+            `;
+        }).join('');
+    }
+
+    renderPlans();
 
     function activatePlan(name, price) {
         if (currentBalance < price) {
-            tg.showAlert(`رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل خطة ${name}.\n\nالمطلوب: $${price}`);
+            tg.showAlert(`رصيدك غير كافٍ.\n\nالمطلوب: $${price}\nالمتاح: $${currentBalance.toFixed(2)}`);
             openModal('deposit');
             setTimeout(() => {
                 const el = document.getElementById('dep-amt');
@@ -626,12 +1052,45 @@
         .then(d => {
             if (d.success) {
                 loadBalance();
-                tg.showAlert(`تم تفعيل خطة ${name} بنجاح!\n\nالمبلغ: $${price}`);
+                tg.showAlert(`تم تفعيل خطة ${name} بنجاح`);
             } else {
                 tg.showAlert(d.error || 'حدث خطأ.');
             }
         })
         .catch(() => tg.showAlert('خطأ في الاتصال'));
+    }
+
+    function loadHistory() {
+        const container = document.getElementById('history-container');
+        // للتجربة — سجل ثابت
+        const items = JSON.parse(localStorage.getItem('vip_history_' + userData.id) || '[]');
+        document.getElementById('history-count').innerText = items.length + ' عملية';
+
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="history-empty">
+                    <i class="fa-solid fa-receipt"></i>
+                    لا توجد عمليات بعد
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="history-item">
+                <div class="history-left">
+                    <div class="history-icon ${item.type === 'DEPOSIT' ? 'dep' : 'wit'}">
+                        <i class="fa-solid fa-arrow-${item.type === 'DEPOSIT' ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="history-info">
+                        <div class="history-title">${item.type === 'DEPOSIT' ? 'إيداع' : 'سحب'}</div>
+                        <div class="history-date">${item.date}</div>
+                    </div>
+                </div>
+                <div class="history-amount ${item.type === 'DEPOSIT' ? 'dep' : 'wit'}">
+                    ${item.type === 'DEPOSIT' ? '+' : '-'}$${item.amount.toFixed(2)}
+                </div>
+            </div>
+        `).join('');
     }
 
     function openModal(type) {
@@ -642,9 +1101,13 @@
         if (type === 'deposit') {
             title.innerText = "إيداع أصول";
             body.innerHTML = `
+                <div class="info-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div>سيتم مراجعة طلبك بواسطة فريق الدعم خلال دقائق. الرصيد يُضاف بعد الموافقة.</div>
+                </div>
                 <div class="field">
                     <label class="field-label">شبكة الإيداع</label>
-                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="select">
+                    <select id="dep-method" onchange="updateWallet('dep')" class="select">
                         <option value="TRC20">USDT — TRC20</option>
                         <option value="BEP20">USDT — BEP20</option>
                         <option value="VODAFONE">فودافون كاش</option>
@@ -652,15 +1115,18 @@
                 </div>
                 <div class="field">
                     <label class="field-label">عنوان المحفظة</label>
-                    <div class="wallet-box" id="w-addr">${WALLETS.TRC20}</div>
+                    <div class="wallet-box">
+                        <span id="w-addr">${WALLETS.TRC20}</span>
+                        <button class="copy-btn" onclick="copyWallet()"><i class="fa-solid fa-copy"></i></button>
+                    </div>
                 </div>
                 <div class="field">
                     <label class="field-label">المبلغ بالدولار</label>
                     <input id="dep-amt" type="number" inputmode="decimal" placeholder="0.00" class="input num">
                 </div>
                 <div class="field">
-                    <label class="field-label">رقم المعاملة / المُحوِّل</label>
-                    <input id="dep-tx" type="text" placeholder="TX ID أو رقم المحفظة" class="input num">
+                    <label class="field-label">رقم المعاملة</label>
+                    <input id="dep-tx" type="text" placeholder="TX ID أو رقم المُحوِّل" class="input num">
                 </div>
                 <button onclick="submitDep()" class="btn-full btn-full-primary">
                     تأكيد الإيداع
@@ -668,6 +1134,10 @@
         } else {
             title.innerText = "سحب الأرباح";
             body.innerHTML = `
+                <div class="info-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div>الحد الأدنى للسحب $10. يتم معالجة الطلب خلال 24 ساعة.</div>
+                </div>
                 <div class="field">
                     <label class="field-label">شبكة السحب</label>
                     <select id="wit-method" class="select">
@@ -690,6 +1160,29 @@
         }
     }
 
+    function updateWallet() {
+        const m = document.getElementById('dep-method').value;
+        document.getElementById('w-addr').innerText = WALLETS[m];
+    }
+
+    function copyWallet() {
+        const addr = document.getElementById('w-addr').innerText;
+        navigator.clipboard.writeText(addr).then(() => {
+            tg.showAlert('تم نسخ العنوان');
+        });
+    }
+
+    function addHistory(type, amount) {
+        const key = 'vip_history_' + userData.id;
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.unshift({
+            type: type,
+            amount: amount,
+            date: new Date().toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
+        });
+        localStorage.setItem(key, JSON.stringify(items.slice(0, 50)));
+    }
+
     function submitDep() {
         const amt = parseFloat(document.getElementById('dep-amt').value);
         if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
@@ -704,7 +1197,11 @@
                 details: document.getElementById('dep-tx').value
             })
         })
-        .then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة'); })
+        .then(() => {
+            addHistory('DEPOSIT', amt);
+            closeModal();
+            tg.showAlert('تم إرسال طلب الإيداع للمراجعة');
+        })
         .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
 
@@ -725,8 +1222,13 @@
         .then(r => r.json())
         .then(d => {
             closeModal();
-            if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب'); }
-            else { tg.showAlert(d.error || 'الرصيد غير كافٍ'); }
+            if (d.success) {
+                addHistory('WITHDRAW', amt);
+                loadBalance();
+                tg.showAlert('تم إرسال طلب السحب');
+            } else {
+                tg.showAlert(d.error || 'الرصيد غير كافٍ');
+            }
         })
         .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
