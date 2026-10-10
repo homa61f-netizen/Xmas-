@@ -6,513 +6,520 @@
     <title>VIP INVEST PRO</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        
+
         :root {
-            --gold: #FFD700;
-            --gold-2: #F0B90B;
-            --green: #00FFA3;
-            --red: #FF3B5C;
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-2: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-border-2: rgba(255, 255, 255, 0.18);
+            --bg: #0B0E11;
+            --card: #181A20;
+            --card-2: #1E2329;
+            --border: #2B3139;
+            --border-2: #363C45;
+            --text: #EAECEF;
+            --text-2: #848E9C;
+            --text-3: #5E6673;
+            --yellow: #FCD535;
+            --yellow-2: #F0B90B;
+            --yellow-dark: #3A2F0B;
+            --green: #0ECB81;
+            --green-dark: #0B2B22;
+            --red: #F6465D;
         }
-        
+
         html, body {
-            font-family: 'IBM Plex Sans Arabic', sans-serif;
-            background: #05060A;
-            color: #fff;
+            font-family: 'IBM Plex Sans Arabic', 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             user-select: none;
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        /* Animated background orbs */
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(90px);
-            z-index: 0;
-            pointer-events: none;
-        }
-        body::before {
-            width: 350px; height: 350px;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.35), transparent 70%);
-            top: -100px; right: -80px;
-            animation: float 14s ease-in-out infinite;
-        }
-        body::after {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(0, 180, 255, 0.28), transparent 70%);
-            bottom: -120px; left: -120px;
-            animation: float 18s ease-in-out infinite reverse;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, -40px) scale(1.1); }
-        }
-        
-        /* Extra glow orb */
-        .bg-orb-3 {
-            position: fixed;
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(0, 255, 163, 0.22), transparent 70%);
-            border-radius: 50%;
-            filter: blur(100px);
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 0;
-            pointer-events: none;
-            animation: float 20s ease-in-out infinite;
-        }
-        
-        .glass {
-            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 22px;
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-        
-        .glass-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 18px;
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
-            transition: all 0.3s ease;
-        }
-        
-        .glass-card:hover {
-            border-color: rgba(255, 215, 0, 0.3);
-            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        
-        .num-font { font-family: 'Roboto Mono', monospace; letter-spacing: -0.5px; }
-        .logo-font { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
-        
+
+        .num { font-family: 'Roboto Mono', monospace; font-feature-settings: "tnum"; }
+
         ::-webkit-scrollbar { display: none; }
-        
-        /* Top bar */
-        .top-bar {
+
+        /* ============ TOP BAR ============ */
+        .topbar {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
             position: sticky;
             top: 0;
             z-index: 40;
-            padding: 14px 16px;
-            background: rgba(10, 12, 18, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
-        
-        /* Avatar ring */
-        .avatar-ring {
-            position: relative;
-            display: inline-block;
+
+        .topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 480px;
+            margin: 0 auto;
         }
-        .avatar-ring::before {
-            content: '';
-            position: absolute;
-            inset: -3px;
+
+        .user-wrap { display: flex; align-items: center; gap: 10px; }
+
+        .avatar {
+            width: 36px; height: 36px;
             border-radius: 50%;
-            background: conic-gradient(from 0deg, #FFD700, #F0B90B, #00FFA3, #FFD700);
-            z-index: -1;
-            animation: spin 4s linear infinite;
+            object-fit: cover;
+            border: 1px solid var(--border-2);
         }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* VIP Badge */
-        .vip-badge {
-            background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,215,0,0.08));
-            border: 1px solid rgba(255,215,0,0.5);
-            color: #FFD700;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            box-shadow: 0 0 15px rgba(255,215,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-            font-family: 'Orbitron', sans-serif;
-        }
-        
-        /* Balance Card */
-        .balance-card {
-            position: relative;
-            overflow: hidden;
-        }
-        .balance-card::before {
-            content: '';
-            position: absolute;
-            top: -50%; right: -20%;
-            width: 200px; height: 200px;
-            background: radial-gradient(circle, rgba(255,215,0,0.2), transparent 70%);
-            pointer-events: none;
-        }
-        .balance-card::after {
-            content: '';
-            position: absolute;
-            bottom: -60%; left: -20%;
-            width: 220px; height: 220px;
-            background: radial-gradient(circle, rgba(0,255,163,0.15), transparent 70%);
-            pointer-events: none;
-        }
-        
-        .balance-amount {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 38px;
-            background: linear-gradient(135deg, #fff 0%, #FFD700 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -1px;
-            text-shadow: 0 0 40px rgba(255,215,0,0.3);
-        }
-        
-        /* Buttons */
-        .btn-gold {
-            background: linear-gradient(135deg, #FFD700 0%, #F0B90B 100%);
-            color: #05060A;
-            font-weight: 800;
-            border: none;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
-            transition: all 0.2s ease;
-        }
-        .btn-gold:active {
-            transform: scale(0.97);
-            box-shadow: 0 2px 10px rgba(255,215,0,0.5);
-        }
-        
-        .btn-glass {
-            background: rgba(255,255,255,0.06);
-            color: #fff;
-            font-weight: 700;
-            border: 1px solid rgba(255,255,255,0.12);
-            backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-        }
-        .btn-glass:active {
-            transform: scale(0.97);
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .btn-green {
-            background: linear-gradient(135deg, #00FFA3 0%, #00CC82 100%);
-            color: #05060A;
-            font-weight: 800;
-            box-shadow: 0 4px 20px rgba(0,255,163,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        
-        /* Plan Cards */
-        .plan-card {
-            position: relative;
-            overflow: hidden;
-            padding: 16px;
-            border-radius: 18px;
-            transition: all 0.3s ease;
-        }
-        
-        .plan-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), transparent);
-        }
-        
-        .plan-card.gold-tier::after {
-            content: '';
-            position: absolute;
-            top: -50%; right: -30%;
-            width: 180px; height: 180px;
-            background: radial-gradient(circle, rgba(255,215,0,0.15), transparent 70%);
-            pointer-events: none;
-        }
-        
-        .plan-card.diamond-tier {
-            background: linear-gradient(135deg, rgba(0,255,163,0.08), rgba(255,215,0,0.04));
-            border: 1px solid rgba(0,255,163,0.25);
-        }
-        
-        .plan-card.diamond-tier::before {
-            background: linear-gradient(90deg, transparent, rgba(0,255,163,0.6), transparent);
-        }
-        
-        .plan-name {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 15px;
-            color: #fff;
-            letter-spacing: 0.5px;
-        }
-        
-        .plan-profit {
-            font-family: 'Roboto Mono', monospace;
-            font-weight: 700;
-            font-size: 11px;
-            color: #00FFA3;
-            text-shadow: 0 0 10px rgba(0,255,163,0.5);
-        }
-        
-        .plan-price {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 18px;
-            background: linear-gradient(135deg, #FFD700, #F0B90B);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .plan-return {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 10px;
-            color: rgba(255,255,255,0.6);
-        }
-        
-        .activate-btn {
-            background: linear-gradient(135deg, #FFD700 0%, #F0B90B 100%);
-            color: #05060A;
-            font-weight: 800;
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 11px;
-            box-shadow: 0 3px 15px rgba(255,215,0,0.35);
-            transition: all 0.2s;
-            border: none;
-        }
-        .activate-btn:active {
-            transform: scale(0.95);
-        }
-        
-        /* Section Title */
-        .section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
+
+        .user-name {
             font-size: 13px;
-            letter-spacing: 1px;
-            color: #fff;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .user-handle {
+            font-size: 11px;
+            color: var(--text-2);
+            font-weight: 500;
+            margin-top: 2px;
+            display: block;
+        }
+
+        .badge-vip {
+            background: var(--yellow-dark);
+            color: var(--yellow);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(252, 213, 53, 0.2);
+        }
+
+        /* ============ CONTAINER ============ */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* ============ BALANCE SECTION ============ */
+        .balance-section {
+            margin-bottom: 20px;
+        }
+
+        .balance-label {
+            font-size: 12px;
+            color: var(--text-2);
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .balance-label i { font-size: 11px; }
+
+        .balance-value {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+
+        .balance-num {
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .balance-currency {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .balance-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: var(--yellow);
+            color: #0B0E11;
+        }
+        .btn-primary:hover { background: var(--yellow-2); }
+
+        .btn-secondary {
+            background: var(--card-2);
+            color: var(--text);
+            border: 1px solid var(--border-2);
+        }
+        .btn-secondary:hover { background: #252A32; }
+
+        /* ============ SECTION HEADER ============ */
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .section-tag {
+            font-size: 11px;
+            color: var(--text-2);
+            font-weight: 500;
+            background: var(--card-2);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* ============ PLAN ROW ============ */
+        .plans-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .plan-row {
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: border-color 0.15s ease;
+        }
+
+        .plan-row:hover { border-color: var(--border-2); }
+
+        .plan-row.plan-featured {
+            border-color: rgba(252, 213, 53, 0.4);
+            background: linear-gradient(90deg, rgba(252, 213, 53, 0.04) 0%, var(--card-2) 30%);
+        }
+
+        .plan-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .plan-top {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .section-title i {
-            color: #FFD700;
+
+        .plan-name {
             font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.3px;
         }
-        
-        /* Modal */
-        .modal-content {
-            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+        .plan-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
         }
-        
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+
+        .badge-hot {
+            background: rgba(246, 70, 93, 0.15);
+            color: var(--red);
         }
-        
-        /* Inputs */
-        .glass-input {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            width: 100%;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
+
+        .badge-new {
+            background: rgba(14, 203, 129, 0.15);
+            color: var(--green);
+        }
+
+        .badge-featured {
+            background: rgba(252, 213, 53, 0.15);
+            color: var(--yellow);
+        }
+
+        .plan-meta {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .plan-price {
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .plan-price b {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .plan-profit {
+            color: var(--green);
+            font-weight: 600;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+        }
+
+        .plan-return {
+            color: var(--text-3);
+            font-size: 11px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .btn-activate {
+            background: var(--yellow);
+            color: #0B0E11;
+            font-weight: 700;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
             font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.15s ease;
         }
-        .glass-input:focus {
+
+        .btn-activate:hover { background: var(--yellow-2); }
+        .btn-activate:active { transform: scale(0.96); }
+
+        /* ============ MODAL ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal {
+            background: var(--card-2);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 16px 16px 0 0;
+            padding: 20px;
+            border-top: 1px solid var(--border-2);
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-2);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover { background: var(--card); color: var(--text); }
+
+        /* ============ FORM ============ */
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-size: 12px;
+            color: var(--text-2);
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .input, .select {
+            width: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.15s ease;
+        }
+
+        .input:focus, .select:focus {
             outline: none;
-            border-color: rgba(255,215,0,0.5);
-            box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+            border-color: var(--yellow);
         }
-        .glass-input::placeholder {
-            color: rgba(255,255,255,0.4);
-        }
-        
-        select.glass-input {
+
+        .input::placeholder { color: var(--text-3); }
+
+        .select {
             appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFD700' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23848E9C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
             background-repeat: no-repeat;
             background-position: left 14px center;
-            padding-left: 38px;
+            padding-left: 36px;
+            cursor: pointer;
         }
-        
-        select.glass-input option {
-            background: #0a0c12;
-            color: #fff;
-        }
-        
-        /* Wallet Address */
+
+        .select option { background: var(--card-2); color: var(--text); }
+
         .wallet-box {
-            background: rgba(255,215,0,0.08);
-            border: 1px dashed rgba(255,215,0,0.4);
-            color: #FFD700;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-family: 'Roboto Mono', monospace;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--yellow);
+            padding: 11px 14px;
+            border-radius: 8px;
             font-size: 11px;
+            font-family: 'Roboto Mono', monospace;
             word-break: break-all;
             line-height: 1.5;
         }
-        
-        /* Header Title */
-        .app-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 12px;
-            background: linear-gradient(135deg, #FFD700, #F0B90B, #FFD700);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: 2px;
-            animation: shimmer 3s ease-in-out infinite;
+
+        .btn-full {
+            width: 100%;
+            padding: 13px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
         }
-        
-        @keyframes shimmer {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+
+        .btn-full-primary {
+            background: var(--yellow);
+            color: #0B0E11;
         }
-        
-        /* Live indicator */
-        .live-dot {
-            display: inline-block;
-            width: 6px; height: 6px;
-            background: #00FFA3;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00FFA3;
-            animation: pulse 1.5s ease-in-out infinite;
+        .btn-full-primary:active { transform: scale(0.98); }
+
+        .btn-full-green {
+            background: var(--green);
+            color: #0B0E11;
         }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.3); }
-        }
-        
-        /* Container */
-        .container { max-width: 460px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
-        
-        /* Sparkle decoration */
-        .sparkle {
-            position: absolute;
-            width: 4px; height: 4px;
-            background: #FFD700;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #FFD700;
-            animation: sparkle 2s ease-in-out infinite;
-        }
-        
-        @keyframes sparkle {
-            0%, 100% { opacity: 0; transform: scale(0.5); }
-            50% { opacity: 1; transform: scale(1.2); }
+        .btn-full-green:active { transform: scale(0.98); }
+
+        /* ============ EMPTY STATE ============ */
+        .footer {
+            text-align: center;
+            padding: 24px 0 12px;
+            font-size: 11px;
+            color: var(--text-3);
+            letter-spacing: 0.3px;
         }
     </style>
 </head>
 <body>
 
-<div class="bg-orb-3"></div>
-
 <!-- Top Bar -->
-<div class="top-bar">
-    <div class="flex items-center justify-between" style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:12px;">
-            <div class="avatar-ring">
-                <img id="user-avatar" src="https://ui-avatars.com/api/?name=VIP&background=0a0c12&color=FFD700&bold=true" 
-                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;">
-            </div>
+<div class="topbar">
+    <div class="topbar-inner">
+        <div class="user-wrap">
+            <img id="user-avatar" class="avatar" src="https://ui-avatars.com/api/?name=U&background=1E2329&color=FCD535&bold=true">
             <div>
-                <h1 id="user-fullname" style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;">مستخدم VIP</h1>
-                <span id="user-username" class="num-font" style="font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;display:flex;align-items:center;gap:5px;margin-top:2px;">
-                    <span class="live-dot"></span>
-                    <span id="user-username-text">@username</span>
-                </span>
+                <div id="user-fullname" class="user-name">مستخدم</div>
+                <span id="user-username" class="user-handle">@username</span>
             </div>
         </div>
-        <span class="vip-badge">👑 VIP</span>
+        <span class="badge-vip">VIP</span>
     </div>
 </div>
 
 <div class="container">
 
-    <!-- Logo Bar -->
-    <div style="text-align:center;margin-bottom:16px;">
-        <div class="app-title">VIP INVEST PRO</div>
-    </div>
-
-    <!-- Balance Card -->
-    <section class="glass balance-card" style="padding:22px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;position:relative;z-index:2;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.5px;">
-                <i class="fa-solid fa-wallet" style="color:#FFD700;margin-left:5px;"></i>
-                إجمالي الأصول
-            </span>
-            <span style="font-size:9px;color:#00FFA3;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:1px;">
-                ● LIVE
-            </span>
+    <!-- Balance -->
+    <section class="balance-section">
+        <div class="balance-label">
+            <i class="fa-solid fa-wallet"></i>
+            إجمالي الأصول
         </div>
-        <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 20px;position:relative;z-index:2;">
-            <span class="balance-amount" id="user-balance">0.00</span>
-            <span class="num-font" style="font-size:12px;color:rgba(255,255,255,0.5);font-weight:700;">USD</span>
+        <div class="balance-value">
+            <span class="balance-num" id="user-balance">0.00</span>
+            <span class="balance-currency">USD</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:2;">
-            <button onclick="openModal('deposit')" class="btn-gold" 
-                    style="padding:14px;border-radius:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;">
+        <div class="balance-actions">
+            <button onclick="openModal('deposit')" class="btn btn-primary">
                 <i class="fa-solid fa-arrow-down-to-line"></i> إيداع
             </button>
-            <button onclick="openModal('withdraw')" class="btn-glass"
-                    style="padding:14px;border-radius:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;">
+            <button onclick="openModal('withdraw')" class="btn btn-secondary">
                 <i class="fa-solid fa-arrow-up-from-line"></i> سحب
             </button>
         </div>
     </section>
 
-    <!-- Section Title -->
-    <div class="section-title" style="margin-bottom:14px;">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>الخطط الاستثمارية</span>
-        <span style="font-size:9px;color:rgba(255,255,255,0.4);font-weight:600;font-family:'Roboto Mono',monospace;">24H</span>
+    <!-- Plans -->
+    <div class="section-head">
+        <div class="section-title">خطط الاستثمار</div>
+        <div class="section-tag">24 ساعة</div>
     </div>
 
-    <!-- Plans Container -->
-    <div id="plans-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+    <div class="plans-list" id="plans-container"></div>
 
-    <!-- Footer -->
-    <div style="text-align:center;margin:24px 0 12px;font-size:10px;color:rgba(255,255,255,0.3);font-family:'Roboto Mono',monospace;letter-spacing:1px;">
-        SECURED BY VIP INVEST PRO 🔒
+    <div class="footer">
+        VIP INVEST PRO · SECURED PLATFORM
     </div>
 
 </div>
 
 <!-- Modal -->
-<div id="modal-overlay" 
-     style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;display:none;align-items:flex-end;justify-content:center;"
-     onclick="if(event.target===this)closeModal()">
-    <div class="modal-content glass" 
-         style="width:100%;max-width:460px;border-radius:24px 24px 0 0;padding:22px;border-bottom:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <h3 id="modal-title" style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:14px;color:#FFD700;letter-spacing:1px;"></h3>
-            <button onclick="closeModal()" 
-                    style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+<div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+        <div class="modal-head">
+            <div id="modal-title" class="modal-title">إيداع</div>
+            <button onclick="closeModal()" class="modal-close">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -528,7 +535,6 @@
     let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
     let currentBalance = 0;
 
-    // تحميل بيانات المستخدم من تليجرام
     if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
         const u = tg.initDataUnsafe.user;
         userData = {
@@ -538,11 +544,10 @@
         };
         const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
         document.getElementById('user-fullname').innerText = fullName || 'مستخدم';
-        document.getElementById('user-username-text').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
+        document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
         if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
     }
 
-    // تسجيل المستخدم
     fetch('/api/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -566,58 +571,49 @@
             .catch(err => console.error('balance err:', err));
     }
 
-    // الخطط الاستثمارية — أقل خطة 30% ربح
+    // الخطط — أقل خطة 30%
     const plans = [
-        { name: "STARTER",    price: 10,    profit: "30%", returnAmt: 13.00,   tier: "silver" },
-        { name: "PRO",        price: 50,    profit: "35%", returnAmt: 67.50,   tier: "gold" },
-        { name: "VIP",        price: 100,   profit: "40%", returnAmt: 140.00,  tier: "gold" },
-        { name: "ELITE",      price: 500,   profit: "50%", returnAmt: 750.00,  tier: "gold" },
-        { name: "DIAMOND",    price: 1000,  profit: "60%", returnAmt: 1600.00, tier: "diamond" },
-        { name: "BLACK VIP",  price: 5000,  profit: "80%", returnAmt: 9000.00, tier: "diamond" }
+        { name: "STARTER",   price: 10,   profit: 30, returnAmt: 13.00,   featured: false, badge: null },
+        { name: "PRO",       price: 50,   profit: 35, returnAmt: 67.50,   featured: false, badge: "HOT" },
+        { name: "VIP",       price: 100,  profit: 40, returnAmt: 140.00,  featured: true,  badge: "FEATURED" },
+        { name: "ELITE",     price: 500,  profit: 50, returnAmt: 750.00,  featured: false, badge: null },
+        { name: "DIAMOND",   price: 1000, profit: 60, returnAmt: 1600.00, featured: false, badge: null },
+        { name: "BLACK VIP", price: 5000, profit: 80, returnAmt: 9000.00, featured: false, badge: "NEW" }
     ];
-
-    const tierColors = {
-        silver: { border: 'rgba(200,200,200,0.25)', glow: 'rgba(200,200,200,0.15)', badge: '🥈', badgeColor: '#C0C0C0' },
-        gold:   { border: 'rgba(255,215,0,0.3)',    glow: 'rgba(255,215,0,0.2)',    badge: '🥇', badgeColor: '#FFD700' },
-        diamond:{ border: 'rgba(0,255,163,0.35)',   glow: 'rgba(0,255,163,0.2)',    badge: '💎', badgeColor: '#00FFA3' }
-    };
 
     const container = document.getElementById('plans-container');
     plans.forEach(p => {
-        const c = tierColors[p.tier];
-        const cls = p.tier === 'diamond' ? 'plan-card diamond-tier' : (p.tier === 'gold' ? 'plan-card gold-tier' : 'plan-card');
+        const badgeClass = p.badge === 'HOT' ? 'badge-hot' : p.badge === 'NEW' ? 'badge-new' : 'badge-featured';
+        const badgeHTML = p.badge ? `<span class="plan-badge ${badgeClass}">${p.badge}</span>` : '';
+        const featuredClass = p.featured ? 'plan-featured' : '';
+
         container.innerHTML += `
-            <div class="${cls}" style="border:1px solid ${c.border};box-shadow:0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${c.glow};">
-                <div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;">
-                    <div style="flex:1;">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                            <span style="font-size:14px;">${c.badge}</span>
-                            <span class="plan-name">${p.name}</span>
-                        </div>
-                        <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px;">
-                            <span class="plan-price">$${p.price.toLocaleString()}</span>
-                            <span class="plan-profit">+${p.profit}</span>
-                        </div>
-                        <div class="plan-return" style="margin-top:6px;">
-                            <i class="fa-solid fa-coins" style="color:${c.badgeColor};font-size:9px;"></i>
-                            عائد: $${p.returnAmt.toLocaleString()}
-                        </div>
+            <div class="plan-row ${featuredClass}">
+                <div class="plan-info">
+                    <div class="plan-top">
+                        <span class="plan-name">${p.name}</span>
+                        ${badgeHTML}
                     </div>
-                    <button onclick="activatePlan('${p.name}',${p.price})" class="activate-btn">
-                        <i class="fa-solid fa-bolt"></i> تفعيل
-                    </button>
+                    <div class="plan-meta">
+                        <span class="plan-price">سعر: <b>$${p.price.toLocaleString()}</b></span>
+                        <span class="plan-profit">+${p.profit}%</span>
+                        <span class="plan-return">→ $${p.returnAmt.toLocaleString()}</span>
+                    </div>
                 </div>
+                <button onclick="activatePlan('${p.name}',${p.price})" class="btn-activate">
+                    تفعيل
+                </button>
             </div>`;
     });
 
     function activatePlan(name, price) {
         if (currentBalance < price) {
-            tg.showAlert(`⚠️ رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}.\n\nيرجى الإيداع أولاً بمبلغ $${(price - currentBalance).toFixed(2)} على الأقل.`);
+            tg.showAlert(`رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل خطة ${name}.\n\nالمطلوب: $${price}`);
             openModal('deposit');
             setTimeout(() => {
-                const amtInput = document.getElementById('dep-amt');
-                if (amtInput) amtInput.value = (price - currentBalance).toFixed(2);
-            }, 350);
+                const el = document.getElementById('dep-amt');
+                if (el) el.value = (price - currentBalance).toFixed(2);
+            }, 300);
             return;
         }
 
@@ -630,12 +626,12 @@
         .then(d => {
             if (d.success) {
                 loadBalance();
-                tg.showAlert(`🚀 تم تفعيل خطة ${name} بنجاح!\n\n💰 المبلغ: $${price}\n📈 العائد المتوقع: بعد 24 ساعة`);
+                tg.showAlert(`تم تفعيل خطة ${name} بنجاح!\n\nالمبلغ: $${price}`);
             } else {
                 tg.showAlert(d.error || 'حدث خطأ.');
             }
         })
-        .catch(err => tg.showAlert('خطأ في الاتصال بالسيرفر'));
+        .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
 
     function openModal(type) {
@@ -644,61 +640,59 @@
         const body = document.getElementById('modal-body');
 
         if (type === 'deposit') {
-            title.innerText = "📥 إيداع أصول";
+            title.innerText = "إيداع أصول";
             body.innerHTML = `
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">طريقة الإيداع</label>
-                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="glass-input">
-                        <option value="TRC20">💎 USDT (TRC20)</option>
-                        <option value="BEP20">🔷 USDT (BEP20)</option>
-                        <option value="VODAFONE">📱 فودافون كاش</option>
+                <div class="field">
+                    <label class="field-label">شبكة الإيداع</label>
+                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="select">
+                        <option value="TRC20">USDT — TRC20</option>
+                        <option value="BEP20">USDT — BEP20</option>
+                        <option value="VODAFONE">فودافون كاش</option>
                     </select>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">عنوان المحفظة</label>
+                <div class="field">
+                    <label class="field-label">عنوان المحفظة</label>
                     <div class="wallet-box" id="w-addr">${WALLETS.TRC20}</div>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">المبلغ ($)</label>
-                    <input id="dep-amt" type="number" inputmode="decimal" placeholder="مثال: 50" class="glass-input num-font">
+                <div class="field">
+                    <label class="field-label">المبلغ بالدولار</label>
+                    <input id="dep-amt" type="number" inputmode="decimal" placeholder="0.00" class="input num">
                 </div>
-                <div style="margin-bottom:18px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">رقم المعاملة / رقم المحول</label>
-                    <input id="dep-tx" type="text" placeholder="TX hash أو رقم المحفظة" class="glass-input num-font">
+                <div class="field">
+                    <label class="field-label">رقم المعاملة / المُحوِّل</label>
+                    <input id="dep-tx" type="text" placeholder="TX ID أو رقم المحفظة" class="input num">
                 </div>
-                <button onclick="submitDep()" class="btn-gold" 
-                        style="width:100%;padding:14px;border-radius:14px;font-size:14px;font-family:inherit;cursor:pointer;">
-                    <i class="fa-solid fa-check"></i> تأكيد الإيداع
+                <button onclick="submitDep()" class="btn-full btn-full-primary">
+                    تأكيد الإيداع
                 </button>`;
         } else {
-            title.innerText = "📤 سحب أرباح";
+            title.innerText = "سحب الأرباح";
             body.innerHTML = `
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">طريقة السحب</label>
-                    <select id="wit-method" class="glass-input">
-                        <option value="TRC20">💎 USDT (TRC20)</option>
-                        <option value="BEP20">🔷 USDT (BEP20)</option>
-                        <option value="VODAFONE">📱 فودافون كاش</option>
+                <div class="field">
+                    <label class="field-label">شبكة السحب</label>
+                    <select id="wit-method" class="select">
+                        <option value="TRC20">USDT — TRC20</option>
+                        <option value="BEP20">USDT — BEP20</option>
+                        <option value="VODAFONE">فودافون كاش</option>
                     </select>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">المبلغ ($)</label>
-                    <input id="wit-amt" type="number" inputmode="decimal" placeholder="مثال: 25" class="glass-input num-font">
+                <div class="field">
+                    <label class="field-label">المبلغ بالدولار</label>
+                    <input id="wit-amt" type="number" inputmode="decimal" placeholder="0.00" class="input num">
                 </div>
-                <div style="margin-bottom:18px;">
-                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">عنوان الاستلام / رقم فودافون</label>
-                    <input id="wit-addr" type="text" placeholder="عنوان المحفظة أو رقم الهاتف" class="glass-input num-font">
+                <div class="field">
+                    <label class="field-label">عنوان الاستلام</label>
+                    <input id="wit-addr" type="text" placeholder="عنوان المحفظة أو رقم الهاتف" class="input num">
                 </div>
-                <button onclick="submitWit()" class="btn-green" 
-                        style="width:100%;padding:14px;border-radius:14px;font-size:14px;font-family:inherit;cursor:pointer;">
-                    <i class="fa-solid fa-check"></i> تأكيد السحب
+                <button onclick="submitWit()" class="btn-full btn-full-green">
+                    تأكيد السحب
                 </button>`;
         }
     }
 
     function submitDep() {
         const amt = parseFloat(document.getElementById('dep-amt').value);
-        if (!amt || amt <= 0) { tg.showAlert('⚠️ الرجاء إدخال مبلغ صحيح'); return; }
+        if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
         fetch('/api/deposit', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -710,13 +704,13 @@
                 details: document.getElementById('dep-tx').value
             })
         })
-        .then(() => { closeModal(); tg.showAlert('✅ تم إرسال طلب الإيداع للمراجعة!'); })
-        .catch(() => tg.showAlert('❌ خطأ في الاتصال'));
+        .then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة'); })
+        .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
 
     function submitWit() {
         const amt = parseFloat(document.getElementById('wit-amt').value);
-        if (!amt || amt <= 0) { tg.showAlert('⚠️ الرجاء إدخال مبلغ صحيح'); return; }
+        if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
         fetch('/api/withdraw', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -731,10 +725,10 @@
         .then(r => r.json())
         .then(d => {
             closeModal();
-            if (d.success) { loadBalance(); tg.showAlert('✅ تم إرسال طلب السحب بنجاح!'); }
-            else { tg.showAlert(d.error || '❌ عذراً، الرصيد غير كافٍ.'); }
+            if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب'); }
+            else { tg.showAlert(d.error || 'الرصيد غير كافٍ'); }
         })
-        .catch(() => tg.showAlert('❌ خطأ في الاتصال'));
+        .catch(() => tg.showAlert('خطأ في الاتصال'));
     }
 
     function closeModal() {
