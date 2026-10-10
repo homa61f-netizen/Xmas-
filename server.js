@@ -2,6 +2,7 @@ const { Telegraf, Markup } = require('telegraf');
 const sqlite3 = require('sqlite3').verbose();
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
@@ -11,11 +12,14 @@ const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAHsg7CDOZ_Dr5v2XxOXVVPZv
 const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const bot = new Telegraf(BOT_TOKEN);
 
-// قاعدة البيانات SQLite
-const db = new sqlite3.Database('./platform.db', (err) => {
-    if (err) console.error("خطأ في قاعدة البيانات:", err.message);
+// التأكد من مسار قاعدة البيانات للعمل بثبات
+const dbPath = path.resolve(__dirname, 'platform.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error("خطأ في فتح قاعدة البيانات:", err.message);
+    else console.log("تم الاتصال بقاعدة البيانات SQLite بنجاح.");
 });
 
+// إنشاء الجداول في قاعدة البيانات تلقائياً
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         user_id TEXT PRIMARY KEY,
@@ -38,8 +42,10 @@ db.serialize(() => {
 // أوامر البوت عند الضغط على Start
 bot.start((ctx) => {
     const u = ctx.from;
+    const userId = u.id.toString();
+    
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
-        [u.id.toString(), u.first_name, u.username || '', u.first_name, u.username || '']);
+        [userId, u.first_name, u.username || '', u.first_name, u.username || '']);
     
     const webAppUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://xmas-n11fcwtmy-gwhe.vercel.app";
     
@@ -54,16 +60,18 @@ bot.start((ctx) => {
 app.post('/api/register', (req, res) => {
     const { userId, name, username } = req.body;
     if (!userId) return res.status(400).json({ success: false });
+
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
-        [userId, name, username, name, username], (err) => {
-            if(err) return res.status(500).json({success: false});
+        [userId, name || 'مستخدم', username || '', name || 'مستخدم', username || ''], (err) => {
+            if (err) return res.status(500).json({ success: false });
             res.json({ success: true });
         });
 });
 
 // جلب رصيد المستخدم
 app.get('/api/user/:id', (req, res) => {
-    db.get(`SELECT * FROM users WHERE user_id = ?`, [req.params.id], (err, row) => {
+    const userId = req.params.id;
+    db.get(`SELECT * FROM users WHERE user_id = ?`, [userId], (err, row) => {
         res.json(row || { balance: 0.0 });
     });
 });
@@ -71,10 +79,12 @@ app.get('/api/user/:id', (req, res) => {
 // تفعيل الخطة الاستثمارية وخصم الرصيد فوراً
 app.post('/api/invest', (req, res) => {
     const { userId, planName, price } = req.body;
+    
     db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
         if (!user || user.balance < price) {
             return res.status(400).json({ success: false, error: "عذراً، رصيدك غير كافٍ لتفعيل هذه الخطة." });
         }
+        
         db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [price, userId], (err) => {
             if (err) return res.status(500).json({ success: false, error: "خطأ في الخادم" });
             
@@ -93,6 +103,7 @@ app.post('/api/deposit', (req, res) => {
         [userId, method, amount, details], function(err) {
             if (err) return res.status(500).json({ success: false });
             const txId = this.lastID;
+            
             bot.telegram.sendMessage(ADMIN_ID, 
                 `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details || 'لا توجد'}\``,
                 {
@@ -102,6 +113,7 @@ app.post('/api/deposit', (req, res) => {
                     ])
                 }
             ).catch(() => {});
+            
             res.json({ success: true });
         });
 });
@@ -109,15 +121,19 @@ app.post('/api/deposit', (req, res) => {
 // طلب سحب وإرساله للأدمن مع أزرار
 app.post('/api/withdraw', (req, res) => {
     const { userId, userName, amount, method, address } = req.body;
+    
     db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
         if (!user || user.balance < amount) {
             return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
         }
+        
         db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId], (err) => {
-            if(err) return res.status(500).json({ success: false });
+            if (err) return res.status(500).json({ success: false });
+            
             db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
                 [userId, method, amount, address], function(err) {
                     const txId = this.lastID;
+                    
                     bot.telegram.sendMessage(ADMIN_ID,
                         `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
                         {
@@ -127,6 +143,7 @@ app.post('/api/withdraw', (req, res) => {
                             ])
                         }
                     ).catch(() => {});
+                    
                     res.json({ success: true });
                 });
         });
