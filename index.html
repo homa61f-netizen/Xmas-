@@ -106,9 +106,17 @@
                         <h3 class="text-xs font-bold text-white">${p.name}</h3>
                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
-                    <button onclick="tg.showAlert('تم إرسال الطلب للسيرفر')" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                    <button onclick="activatePlan('${p.name}', ${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
         });
+
+        function activatePlan(name, price) {
+            tg.showConfirm(`هل تؤكد تفعيل خطة ${name} بقيمة $${price}؟\nسينزل الربح تلقائياً بعد 24 ساعة.`, (ok) => {
+                if(ok) {
+                    tg.showAlert(`تم إرسال طلب تفعيل ${name} بنجاح!`);
+                }
+            });
+        }
 
         function openModal(type) {
             document.getElementById('modal-overlay').classList.remove('hidden');
