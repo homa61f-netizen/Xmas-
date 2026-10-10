@@ -1,23 +1,20 @@
-const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
+const express = require('express');
 const path = require('path');
 
 const app = express();
-app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
-// --- الإعدادات الأساسية ---
 const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAGUDN9r7F9EJoOzLgbrj0wFRMjekClJzKw";
 const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- 1. إنشاء قاعدة البيانات SQLite ---
+// --- قاعدة البيانات SQLite ---
+// ملاحظة: في Vercel يتم حفظ الملفات مؤقتاً، لذا يفضل ربط قاعدة بيانات سحابية لاحقاً للإنتاج الفعلي
 const db = new sqlite3.Database('./platform.db', (err) => {
     if (err) console.error("خطأ في قاعدة البيانات:", err.message);
-    else console.log("تم الاتصال بقاعدة البيانات بنجاح.");
 });
 
 db.serialize(() => {
@@ -49,33 +46,23 @@ db.serialize(() => {
     )`);
 });
 
-// --- 2. محرك الأرباح التلقائي بعد 24 ساعة ---
-setInterval(() => {
-    const now = Date.now();
-    db.all(`SELECT * FROM investments WHERE status = 'ACTIVE' AND end_time <= ?`, [now], (err, rows) => {
-        if (err || !rows) return;
-        rows.forEach(inv => {
-            db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [inv.return_amount, inv.user_id]);
-            db.run(`UPDATE investments SET status = 'COMPLETED' WHERE id = ?`, [inv.id]);
-            bot.telegram.sendMessage(inv.user_id, `🎉 **اكتملت خطتك الاستثمارية!**\n\nالخطة: ${inv.plan_name}\nتم إضافة **$${inv.return_amount.toFixed(2)} USD** إلى محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
-        });
-    });
-}, 30000); // يفحص كل 30 ثانية
-
-// --- 3. أوامر البوت ---
+// --- أوامر البوت ---
 bot.start((ctx) => {
     const u = ctx.from;
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
         [u.id.toString(), u.first_name, u.username || '', u.first_name, u.username || '']);
     
+    // الرابط التلقائي لمنصة Vercel
+    const webAppUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://your-domain.vercel.app";
+    
     ctx.reply(`أهلاً بك ${u.first_name} في منصة الاستثمار السريع!`, 
         Markup.inlineKeyboard([
-            [Markup.button.webApp("🚀 فتح المنصة VIP", process.env.VERCEL_URL || "https://your-domain.vercel.app")]
+            [Markup.button.webApp("🚀 فتح المنصة VIP", webAppUrl)]
         ])
     );
 });
 
-// --- 4. معالجة قرارات الأدمن (موافقة / رفض) ---
+// --- معالجة قرارات الأدمن (موافقة / رفض) ---
 bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
     const action = ctx.match[1];
     const type = ctx.match[2];
@@ -98,7 +85,6 @@ bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
         } else {
             db.run(`UPDATE transactions SET status = 'REJECTED' WHERE id = ?`, [txId]);
             if (type === 'wit') {
-                // إعادة المبلغ المخصوم في حالة رفض السحب
                 db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [tx.amount, tx.user_id]);
                 bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب السحب.**\nتم إعادة $${tx.amount} إلى رصيد محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
             } else {
@@ -109,7 +95,7 @@ bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
     });
 });
 
-// --- 5. مسارات الـ API للواجهة الأمامية ---
+// --- مسارات الـ API للواجهة الأمامية ---
 app.get('/api/user/:id', (req, res) => {
     db.get(`SELECT * FROM users WHERE user_id = ?`, [req.params.id], (err, row) => {
         res.json(row || { balance: 0.0 });
@@ -141,7 +127,6 @@ app.post('/api/withdraw', (req, res) => {
         if (!user || user.balance < amount) {
             return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
         }
-        // خصم المبلغ فوراً
         db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId]);
         db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
             [userId, method, amount, address], function(err) {
@@ -160,6 +145,19 @@ app.post('/api/withdraw', (req, res) => {
     });
 });
 
-bot.launch();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`السيرفر يعمل على المنفذ ${PORT}`));
+// --- استقبال وتوجيه تحديثات تليجرام عبر Webhook (مطلوب لـ Vercel) ---
+app.post(`/api/webhook`, (req, res) => {
+    bot.handleUpdate(req.body, res).then(() => {
+        res.status(200).send('OK');
+    }).catch(err => {
+        res.status(500).send(err.toString());
+    });
+});
+
+// توجيه أي مسار آخر لفتح الواجهة الأمامية
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// تصدير التطبيق ليعمل بنظام Vercel Serverless
+module.exports = app;
