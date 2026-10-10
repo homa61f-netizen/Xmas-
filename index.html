@@ -3,248 +3,743 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Binance Pro Platform</title>
+    <title>VIP INVEST PRO</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { binance: ['IBM Plex Sans Arabic', 'sans-serif'], num: ['Roboto Mono', 'monospace'] },
-                    colors: { binance: { bg: '#181A20', card: '#1E2329', input: '#2B313A', yellow: '#F0B90B', green: '#0ECB81', textGray: '#848E9C', border: '#2B313A' } }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'IBM Plex Sans Arabic', sans-serif; background-color: #181A20; color: #EAECEF; user-select: none; }
-        .num-font { font-family: 'Roboto Mono', monospace; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --gold: #FFD700;
+            --gold-2: #F0B90B;
+            --green: #00FFA3;
+            --red: #FF3B5C;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-2: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-border-2: rgba(255, 255, 255, 0.18);
+        }
+        
+        html, body {
+            font-family: 'IBM Plex Sans Arabic', sans-serif;
+            background: #05060A;
+            color: #fff;
+            user-select: none;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background orbs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: 0;
+            pointer-events: none;
+        }
+        body::before {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.35), transparent 70%);
+            top: -100px; right: -80px;
+            animation: float 14s ease-in-out infinite;
+        }
+        body::after {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(0, 180, 255, 0.28), transparent 70%);
+            bottom: -120px; left: -120px;
+            animation: float 18s ease-in-out infinite reverse;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -40px) scale(1.1); }
+        }
+        
+        /* Extra glow orb */
+        .bg-orb-3 {
+            position: fixed;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(0, 255, 163, 0.22), transparent 70%);
+            border-radius: 50%;
+            filter: blur(100px);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        .glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        
+        .num-font { font-family: 'Roboto Mono', monospace; letter-spacing: -0.5px; }
+        .logo-font { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+        
         ::-webkit-scrollbar { display: none; }
+        
+        /* Top bar */
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            padding: 14px 16px;
+            background: rgba(10, 12, 18, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        /* Avatar ring */
+        .avatar-ring {
+            position: relative;
+            display: inline-block;
+        }
+        .avatar-ring::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #FFD700, #F0B90B, #00FFA3, #FFD700);
+            z-index: -1;
+            animation: spin 4s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* VIP Badge */
+        .vip-badge {
+            background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,215,0,0.08));
+            border: 1px solid rgba(255,215,0,0.5);
+            color: #FFD700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(255,215,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        /* Balance Card */
+        .balance-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -20%;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,215,0,0.2), transparent 70%);
+            pointer-events: none;
+        }
+        .balance-card::after {
+            content: '';
+            position: absolute;
+            bottom: -60%; left: -20%;
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(0,255,163,0.15), transparent 70%);
+            pointer-events: none;
+        }
+        
+        .balance-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 38px;
+            background: linear-gradient(135deg, #fff 0%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(255,215,0,0.3);
+        }
+        
+        /* Buttons */
+        .btn-gold {
+            background: linear-gradient(135deg, #FFD700 0%, #F0B90B 100%);
+            color: #05060A;
+            font-weight: 800;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-gold:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(255,215,0,0.5);
+        }
+        
+        .btn-glass {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        .btn-glass:active {
+            transform: scale(0.97);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .btn-green {
+            background: linear-gradient(135deg, #00FFA3 0%, #00CC82 100%);
+            color: #05060A;
+            font-weight: 800;
+            box-shadow: 0 4px 20px rgba(0,255,163,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        
+        /* Plan Cards */
+        .plan-card {
+            position: relative;
+            overflow: hidden;
+            padding: 16px;
+            border-radius: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), transparent);
+        }
+        
+        .plan-card.gold-tier::after {
+            content: '';
+            position: absolute;
+            top: -50%; right: -30%;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(255,215,0,0.15), transparent 70%);
+            pointer-events: none;
+        }
+        
+        .plan-card.diamond-tier {
+            background: linear-gradient(135deg, rgba(0,255,163,0.08), rgba(255,215,0,0.04));
+            border: 1px solid rgba(0,255,163,0.25);
+        }
+        
+        .plan-card.diamond-tier::before {
+            background: linear-gradient(90deg, transparent, rgba(0,255,163,0.6), transparent);
+        }
+        
+        .plan-name {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        
+        .plan-profit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 11px;
+            color: #00FFA3;
+            text-shadow: 0 0 10px rgba(0,255,163,0.5);
+        }
+        
+        .plan-price {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            background: linear-gradient(135deg, #FFD700, #F0B90B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .plan-return {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .activate-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #F0B90B 100%);
+            color: #05060A;
+            font-weight: 800;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 11px;
+            box-shadow: 0 3px 15px rgba(255,215,0,0.35);
+            transition: all 0.2s;
+            border: none;
+        }
+        .activate-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Section Title */
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            color: #FFD700;
+            font-size: 14px;
+        }
+        
+        /* Modal */
+        .modal-content {
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Inputs */
+        .glass-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(255,215,0,0.5);
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+        }
+        .glass-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        
+        select.glass-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFD700' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat: no-repeat;
+            background-position: left 14px center;
+            padding-left: 38px;
+        }
+        
+        select.glass-input option {
+            background: #0a0c12;
+            color: #fff;
+        }
+        
+        /* Wallet Address */
+        .wallet-box {
+            background: rgba(255,215,0,0.08);
+            border: 1px dashed rgba(255,215,0,0.4);
+            color: #FFD700;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+        
+        /* Header Title */
+        .app-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 12px;
+            background: linear-gradient(135deg, #FFD700, #F0B90B, #FFD700);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Live indicator */
+        .live-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            background: #00FFA3;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00FFA3;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.3); }
+        }
+        
+        /* Container */
+        .container { max-width: 460px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
+        
+        /* Sparkle decoration */
+        .sparkle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #FFD700;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
     </style>
 </head>
-<body class="pb-20 max-w-md mx-auto relative min-h-screen">
+<body>
 
-    <!-- Header -->
-    <div class="px-4 pt-3 pb-2 flex items-center justify-between border-b border-binance-border bg-binance-bg sticky top-0 z-40">
-        <div class="flex items-center gap-3">
-            <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=2B313A&color=F0B90B" class="w-10 h-10 rounded-full border-2 border-binance-yellow object-cover">
+<div class="bg-orb-3"></div>
+
+<!-- Top Bar -->
+<div class="top-bar">
+    <div class="flex items-center justify-between" style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div class="avatar-ring">
+                <img id="user-avatar" src="https://ui-avatars.com/api/?name=VIP&background=0a0c12&color=FFD700&bold=true" 
+                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;">
+            </div>
             <div>
-                <h1 id="user-fullname" class="text-xs font-bold text-white">مستخدم تليجرام</h1>
-                <span id="user-username" class="text-[10px] text-binance-textGray font-semibold num-font block">@username</span>
+                <h1 id="user-fullname" style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;">مستخدم VIP</h1>
+                <span id="user-username" class="num-font" style="font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;display:flex;align-items:center;gap:5px;margin-top:2px;">
+                    <span class="live-dot"></span>
+                    <span id="user-username-text">@username</span>
+                </span>
             </div>
         </div>
-        <span class="bg-binance-yellow/10 text-binance-yellow text-[10px] font-bold px-2 py-0.5 rounded border border-binance-yellow/20 num-font">VIP 1</span>
+        <span class="vip-badge">👑 VIP</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Logo Bar -->
+    <div style="text-align:center;margin-bottom:16px;">
+        <div class="app-title">VIP INVEST PRO</div>
     </div>
 
-    <div class="p-4">
-        <!-- Balance Card -->
-        <section class="bg-binance-card rounded-xl p-4 mb-4 border border-binance-border">
-            <span class="text-xs text-binance-textGray font-semibold">إجمالي الأصول</span>
-            <div class="flex items-baseline gap-2 mb-4 mt-1">
-                <span class="text-3xl font-extrabold text-white num-font" id="user-balance">0.00</span>
-                <span class="text-xs font-bold text-binance-textGray num-font">USD</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="openModal('deposit')" class="bg-binance-yellow text-black font-extrabold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-arrow-down-to-line"></i> إيداع
-                </button>
-                <button onclick="openModal('withdraw')" class="bg-binance-input text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 border border-binance-border">
-                    <i class="fa-solid fa-arrow-up-from-line"></i> سحب
-                </button>
-            </div>
-        </section>
-
-        <h2 class="text-sm font-bold text-white mb-3">الخطط الاستثمارية (24 ساعة)</h2>
-        <div class="space-y-3" id="plans-container"></div>
-    </div>
-
-    <!-- Modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-end justify-center">
-        <div class="bg-binance-card w-full max-w-md rounded-t-2xl p-5 border-t border-binance-border">
-            <div class="flex justify-between items-center mb-4 border-b border-binance-border pb-2">
-                <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
-                <button onclick="closeModal()" class="text-binance-textGray"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="modal-body"></div>
+    <!-- Balance Card -->
+    <section class="glass balance-card" style="padding:22px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;position:relative;z-index:2;">
+            <span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.5px;">
+                <i class="fa-solid fa-wallet" style="color:#FFD700;margin-left:5px;"></i>
+                إجمالي الأصول
+            </span>
+            <span style="font-size:9px;color:#00FFA3;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:1px;">
+                ● LIVE
+            </span>
         </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 20px;position:relative;z-index:2;">
+            <span class="balance-amount" id="user-balance">0.00</span>
+            <span class="num-font" style="font-size:12px;color:rgba(255,255,255,0.5);font-weight:700;">USD</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:2;">
+            <button onclick="openModal('deposit')" class="btn-gold" 
+                    style="padding:14px;border-radius:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;">
+                <i class="fa-solid fa-arrow-down-to-line"></i> إيداع
+            </button>
+            <button onclick="openModal('withdraw')" class="btn-glass"
+                    style="padding:14px;border-radius:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;">
+                <i class="fa-solid fa-arrow-up-from-line"></i> سحب
+            </button>
+        </div>
+    </section>
+
+    <!-- Section Title -->
+    <div class="section-title" style="margin-bottom:14px;">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>الخطط الاستثمارية</span>
+        <span style="font-size:9px;color:rgba(255,255,255,0.4);font-weight:600;font-family:'Roboto Mono',monospace;">24H</span>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
+    <!-- Plans Container -->
+    <div id="plans-container" style="display:flex;flex-direction:column;gap:12px;"></div>
 
-        let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
-        let currentBalance = 0;
+    <!-- Footer -->
+    <div style="text-align:center;margin:24px 0 12px;font-size:10px;color:rgba(255,255,255,0.3);font-family:'Roboto Mono',monospace;letter-spacing:1px;">
+        SECURED BY VIP INVEST PRO 🔒
+    </div>
 
-        // تحميل بيانات المستخدم من تليجرام
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-            const u = tg.initDataUnsafe.user;
-            userData = {
-                id: u.id.toString(),
-                name: u.first_name || 'مستخدم',
-                username: u.username || 'NoUsername'
-            };
-            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-            document.getElementById('user-fullname').innerText = fullName || 'مستخدم';
-            document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
-            if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay" 
+     style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;display:none;align-items:flex-end;justify-content:center;"
+     onclick="if(event.target===this)closeModal()">
+    <div class="modal-content glass" 
+         style="width:100%;max-width:460px;border-radius:24px 24px 0 0;padding:22px;border-bottom:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <h3 id="modal-title" style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:14px;color:#FFD700;letter-spacing:1px;"></h3>
+            <button onclick="closeModal()" 
+                    style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.ready();
+
+    let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
+    let currentBalance = 0;
+
+    // تحميل بيانات المستخدم من تليجرام
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+        const u = tg.initDataUnsafe.user;
+        userData = {
+            id: u.id.toString(),
+            name: u.first_name || 'مستخدم',
+            username: u.username || 'NoUsername'
+        };
+        const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+        document.getElementById('user-fullname').innerText = fullName || 'مستخدم';
+        document.getElementById('user-username-text').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
+        if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
+    }
+
+    // تسجيل المستخدم
+    fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(userData)
+    }).then(() => loadBalance()).catch(err => console.error('register err:', err));
+
+    const WALLETS = {
+        TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3",
+        BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+        VODAFONE: "01099887766"
+    };
+
+    function loadBalance() {
+        if (!userData.id) return;
+        fetch(`/api/user/${userData.id}`)
+            .then(r => r.json())
+            .then(d => {
+                currentBalance = d.balance || 0;
+                document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
+            })
+            .catch(err => console.error('balance err:', err));
+    }
+
+    // الخطط الاستثمارية — أقل خطة 30% ربح
+    const plans = [
+        { name: "STARTER",    price: 10,    profit: "30%", returnAmt: 13.00,   tier: "silver" },
+        { name: "PRO",        price: 50,    profit: "35%", returnAmt: 67.50,   tier: "gold" },
+        { name: "VIP",        price: 100,   profit: "40%", returnAmt: 140.00,  tier: "gold" },
+        { name: "ELITE",      price: 500,   profit: "50%", returnAmt: 750.00,  tier: "gold" },
+        { name: "DIAMOND",    price: 1000,  profit: "60%", returnAmt: 1600.00, tier: "diamond" },
+        { name: "BLACK VIP",  price: 5000,  profit: "80%", returnAmt: 9000.00, tier: "diamond" }
+    ];
+
+    const tierColors = {
+        silver: { border: 'rgba(200,200,200,0.25)', glow: 'rgba(200,200,200,0.15)', badge: '🥈', badgeColor: '#C0C0C0' },
+        gold:   { border: 'rgba(255,215,0,0.3)',    glow: 'rgba(255,215,0,0.2)',    badge: '🥇', badgeColor: '#FFD700' },
+        diamond:{ border: 'rgba(0,255,163,0.35)',   glow: 'rgba(0,255,163,0.2)',    badge: '💎', badgeColor: '#00FFA3' }
+    };
+
+    const container = document.getElementById('plans-container');
+    plans.forEach(p => {
+        const c = tierColors[p.tier];
+        const cls = p.tier === 'diamond' ? 'plan-card diamond-tier' : (p.tier === 'gold' ? 'plan-card gold-tier' : 'plan-card');
+        container.innerHTML += `
+            <div class="${cls}" style="border:1px solid ${c.border};box-shadow:0 6px 24px rgba(0,0,0,0.4), 0 0 20px ${c.glow};">
+                <div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;">
+                    <div style="flex:1;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                            <span style="font-size:14px;">${c.badge}</span>
+                            <span class="plan-name">${p.name}</span>
+                        </div>
+                        <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px;">
+                            <span class="plan-price">$${p.price.toLocaleString()}</span>
+                            <span class="plan-profit">+${p.profit}</span>
+                        </div>
+                        <div class="plan-return" style="margin-top:6px;">
+                            <i class="fa-solid fa-coins" style="color:${c.badgeColor};font-size:9px;"></i>
+                            عائد: $${p.returnAmt.toLocaleString()}
+                        </div>
+                    </div>
+                    <button onclick="activatePlan('${p.name}',${p.price})" class="activate-btn">
+                        <i class="fa-solid fa-bolt"></i> تفعيل
+                    </button>
+                </div>
+            </div>`;
+    });
+
+    function activatePlan(name, price) {
+        if (currentBalance < price) {
+            tg.showAlert(`⚠️ رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}.\n\nيرجى الإيداع أولاً بمبلغ $${(price - currentBalance).toFixed(2)} على الأقل.`);
+            openModal('deposit');
+            setTimeout(() => {
+                const amtInput = document.getElementById('dep-amt');
+                if (amtInput) amtInput.value = (price - currentBalance).toFixed(2);
+            }, 350);
+            return;
         }
 
-        // تسجيل المستخدم في السيرفر
-        fetch('/api/register', {
+        fetch('/api/invest', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(userData)
-        }).then(() => loadBalance()).catch(err => console.error('register err:', err));
-
-        const WALLETS = {
-            TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3",
-            BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-            VODAFONE: "01099887766"
-        };
-
-        function loadBalance() {
-            if (!userData.id) return;
-            fetch(`/api/user/${userData.id}`)
-                .then(r => r.json())
-                .then(d => {
-                    currentBalance = d.balance || 0;
-                    document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
-                })
-                .catch(err => console.error('balance err:', err));
-        }
-
-        // الخطط الاستثمارية
-        const plans = [
-            { name: "Plan $10", price: 10, profit: "5%", returnAmt: 10.50 },
-            { name: "Plan $20", price: 20, profit: "7%", returnAmt: 21.40 },
-            { name: "Plan $50", price: 50, profit: "10%", returnAmt: 55.00 },
-            { name: "Plan $500", price: 500, profit: "15%", returnAmt: 575.00 },
-            { name: "Plan $1,000", price: 1000, profit: "20%", returnAmt: 1200.00 }
-        ];
-
-        const container = document.getElementById('plans-container');
-        plans.forEach(p => {
-            container.innerHTML += `
-                <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
-                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
-                    </div>
-                    <button onclick="activatePlan('${p.name}',${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
-                </div>`;
-        });
-
-        function activatePlan(name, price) {
-            if (currentBalance < price) {
-                tg.showAlert(`⚠️ رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}. يرجى الإيداع أولاً.`);
-                openModal('deposit');
-                setTimeout(() => {
-                    const amtInput = document.getElementById('dep-amt');
-                    if (amtInput) amtInput.value = (price - currentBalance).toFixed(2);
-                }, 300);
-                return;
-            }
-
-            fetch('/api/invest', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId: userData.id, planName: name, price: price })
-            })
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) {
-                    loadBalance();
-                    tg.showAlert(`🚀 تم تفعيل ${name} بنجاح!`);
-                } else {
-                    tg.showAlert(d.error || 'حدث خطأ.');
-                }
-            })
-            .catch(err => tg.showAlert('خطأ في الاتصال بالسيرفر'));
-        }
-
-        function openModal(type) {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-            const title = document.getElementById('modal-title');
-            const body = document.getElementById('modal-body');
-
-            if (type === 'deposit') {
-                title.innerText = "إيداع أصول";
-                body.innerHTML = `
-                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="w-full bg-binance-input text-white p-2 rounded text-xs mb-2">
-                        <option value="TRC20">USDT (TRC20)</option>
-                        <option value="BEP20">USDT (BEP20)</option>
-                        <option value="VODAFONE">فودافون كاش</option>
-                    </select>
-                    <div class="bg-binance-bg p-2 rounded text-xs text-binance-yellow font-mono mb-2 break-all" id="w-addr">${WALLETS.TRC20}</div>
-                    <input id="dep-amt" type="number" placeholder="المبلغ ($)" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-2">
-                    <input id="dep-tx" type="text" placeholder="رقم المعاملة / رقم المحول منه" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-3">
-                    <button onclick="submitDep()" class="w-full bg-binance-yellow text-black font-bold p-2 rounded text-xs">تأكيد الإيداع</button>`;
+            body: JSON.stringify({ userId: userData.id, planName: name, price: price })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                loadBalance();
+                tg.showAlert(`🚀 تم تفعيل خطة ${name} بنجاح!\n\n💰 المبلغ: $${price}\n📈 العائد المتوقع: بعد 24 ساعة`);
             } else {
-                title.innerText = "سحب أرباح";
-                body.innerHTML = `
-                    <select id="wit-method" class="w-full bg-binance-input text-white p-2 rounded text-xs mb-2">
-                        <option value="TRC20">USDT (TRC20)</option>
-                        <option value="BEP20">USDT (BEP20)</option>
-                        <option value="VODAFONE">فودافون كاش</option>
-                    </select>
-                    <input id="wit-amt" type="number" placeholder="المبلغ ($)" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-2">
-                    <input id="wit-addr" type="text" placeholder="عنوان الاستلام أو رقم فودافون كاش" class="w-full bg-binance-input p-2 rounded text-xs text-white mb-3">
-                    <button onclick="submitWit()" class="w-full bg-binance-green text-black font-bold p-2 rounded text-xs">تأكيد السحب</button>`;
+                tg.showAlert(d.error || 'حدث خطأ.');
             }
-        }
+        })
+        .catch(err => tg.showAlert('خطأ في الاتصال بالسيرفر'));
+    }
 
-        function submitDep() {
-            const amt = parseFloat(document.getElementById('dep-amt').value);
-            if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
-            fetch('/api/deposit', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    userId: userData.id,
-                    userName: userData.name,
-                    amount: amt,
-                    method: document.getElementById('dep-method').value,
-                    details: document.getElementById('dep-tx').value
-                })
-            })
-            .then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة!'); })
-            .catch(() => tg.showAlert('خطأ في الاتصال'));
-        }
+    function openModal(type) {
+        document.getElementById('modal-overlay').style.display = 'flex';
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
 
-        function submitWit() {
-            const amt = parseFloat(document.getElementById('wit-amt').value);
-            if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
-            fetch('/api/withdraw', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    userId: userData.id,
-                    userName: userData.name,
-                    amount: amt,
-                    method: document.getElementById('wit-method').value,
-                    address: document.getElementById('wit-addr').value
-                })
-            })
-            .then(r => r.json())
-            .then(d => {
-                closeModal();
-                if (d.success) {
-                    loadBalance();
-                    tg.showAlert('تم إرسال طلب السحب بنجاح!');
-                } else {
-                    tg.showAlert(d.error || 'عذراً، الرصيد غير كافٍ.');
-                }
-            })
-            .catch(() => tg.showAlert('خطأ في الاتصال'));
+        if (type === 'deposit') {
+            title.innerText = "📥 إيداع أصول";
+            body.innerHTML = `
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">طريقة الإيداع</label>
+                    <select id="dep-method" onchange="document.getElementById('w-addr').innerText = WALLETS[this.value]" class="glass-input">
+                        <option value="TRC20">💎 USDT (TRC20)</option>
+                        <option value="BEP20">🔷 USDT (BEP20)</option>
+                        <option value="VODAFONE">📱 فودافون كاش</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">عنوان المحفظة</label>
+                    <div class="wallet-box" id="w-addr">${WALLETS.TRC20}</div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">المبلغ ($)</label>
+                    <input id="dep-amt" type="number" inputmode="decimal" placeholder="مثال: 50" class="glass-input num-font">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">رقم المعاملة / رقم المحول</label>
+                    <input id="dep-tx" type="text" placeholder="TX hash أو رقم المحفظة" class="glass-input num-font">
+                </div>
+                <button onclick="submitDep()" class="btn-gold" 
+                        style="width:100%;padding:14px;border-radius:14px;font-size:14px;font-family:inherit;cursor:pointer;">
+                    <i class="fa-solid fa-check"></i> تأكيد الإيداع
+                </button>`;
+        } else {
+            title.innerText = "📤 سحب أرباح";
+            body.innerHTML = `
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">طريقة السحب</label>
+                    <select id="wit-method" class="glass-input">
+                        <option value="TRC20">💎 USDT (TRC20)</option>
+                        <option value="BEP20">🔷 USDT (BEP20)</option>
+                        <option value="VODAFONE">📱 فودافون كاش</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">المبلغ ($)</label>
+                    <input id="wit-amt" type="number" inputmode="decimal" placeholder="مثال: 25" class="glass-input num-font">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600;display:block;margin-bottom:6px;">عنوان الاستلام / رقم فودافون</label>
+                    <input id="wit-addr" type="text" placeholder="عنوان المحفظة أو رقم الهاتف" class="glass-input num-font">
+                </div>
+                <button onclick="submitWit()" class="btn-green" 
+                        style="width:100%;padding:14px;border-radius:14px;font-size:14px;font-family:inherit;cursor:pointer;">
+                    <i class="fa-solid fa-check"></i> تأكيد السحب
+                </button>`;
         }
+    }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.add('hidden');
-        }
-    </script>
+    function submitDep() {
+        const amt = parseFloat(document.getElementById('dep-amt').value);
+        if (!amt || amt <= 0) { tg.showAlert('⚠️ الرجاء إدخال مبلغ صحيح'); return; }
+        fetch('/api/deposit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                userId: userData.id,
+                userName: userData.name,
+                amount: amt,
+                method: document.getElementById('dep-method').value,
+                details: document.getElementById('dep-tx').value
+            })
+        })
+        .then(() => { closeModal(); tg.showAlert('✅ تم إرسال طلب الإيداع للمراجعة!'); })
+        .catch(() => tg.showAlert('❌ خطأ في الاتصال'));
+    }
+
+    function submitWit() {
+        const amt = parseFloat(document.getElementById('wit-amt').value);
+        if (!amt || amt <= 0) { tg.showAlert('⚠️ الرجاء إدخال مبلغ صحيح'); return; }
+        fetch('/api/withdraw', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                userId: userData.id,
+                userName: userData.name,
+                amount: amt,
+                method: document.getElementById('wit-method').value,
+                address: document.getElementById('wit-addr').value
+            })
+        })
+        .then(r => r.json())
+        .then(d => {
+            closeModal();
+            if (d.success) { loadBalance(); tg.showAlert('✅ تم إرسال طلب السحب بنجاح!'); }
+            else { tg.showAlert(d.error || '❌ عذراً، الرصيد غير كافٍ.'); }
+        })
+        .catch(() => tg.showAlert('❌ خطأ في الاتصال'));
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+</script>
 </body>
 </html>
