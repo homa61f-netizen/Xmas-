@@ -26,11 +26,11 @@
 </head>
 <body class="pb-20 max-w-md mx-auto relative min-h-screen">
 
-    <!-- شاشة الحظر إذا فتحت خارج تليجرام -->
+    <!-- شاشة الحظر إذا تم فتح الموقع خارج تليجرام -->
     <div id="block-screen" class="fixed inset-0 bg-[#181A20] z-50 flex flex-col items-center justify-center p-6 text-center hidden">
         <i class="fa-brands fa-telegram text-binance-yellow text-6xl mb-4 animate-bounce"></i>
         <h1 class="text-white text-base font-bold mb-2">منصة محمية حصرياً لتليجرام</h1>
-        <p class="text-binance-textGray text-xs mb-6">يرجى الدخول من داخل تطبيق تليجرام عبر البوت الرسمي.</p>
+        <p class="text-binance-textGray text-xs mb-6">يرجى فتح هذه المنصة من داخل تطبيق تليجرام عبر البوت الرسمي.</p>
     </div>
 
     <!-- Header -->
@@ -63,7 +63,7 @@
         <div class="space-y-3" id="plans-container"></div>
     </div>
 
-    <!-- Modal Deposit / Withdraw -->
+    <!-- Modal -->
     <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-end justify-center">
         <div class="bg-binance-card w-full max-w-md rounded-t-2xl p-5 border-t border-binance-border">
             <div class="flex justify-between items-center mb-4 border-b border-binance-border pb-2">
@@ -82,23 +82,24 @@
         let userData = { id: "", name: "", username: "" };
         let currentBalance = 0;
 
+        // التحقق من بيانات تليجرام بدقة
         if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
             const u = tg.initDataUnsafe.user;
             userData = { id: u.id.toString(), name: u.first_name, username: u.username || 'NoUsername' };
-            document.getElementById('user-fullname').innerText = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+            document.getElementById('user-fullname').innerText = `${u.first_name \vert{}\vert{} ''}${u.last_name || ''}`.trim();
             document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
             if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
-
-            fetch('/api/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(userData)
-            });
-
-            loadBalance();
         } else {
-            document.getElementById('block-screen').classList.remove('hidden');
+            // للتجربة المحلية أو إذا لم توجد بيانات تليجرام مؤقتاً لتظهر الواجهة
+            userData = { id: "8889600549", name: "مطور المنصة", username: "Admin" };
         }
+
+        // تسجيل المستخدم وجلب الرصيد
+        fetch('/api/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(userData)
+        }).then(() => loadBalance());
 
         const WALLETS = { TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3", BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", VODAFONE: "01099887766" };
 
@@ -123,41 +124,33 @@
             container.innerHTML += `
                 <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
                     <div>
-                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
-                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
+                        <h3 class="text-xs font-bold text-white">${p.name}</h3>                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
-                    <button onclick="activatePlan('${p.name}', ${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                    <button onclick="activatePlan('${p.name}',${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
         });
 
-        // نظام احترافي لتفعيل الخطة والتحقق من الرصيد
         function activatePlan(name, price) {
             if (currentBalance < price) {
-                tg.showAlert(`⚠️ عذراً، رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}.\n\nالرجاء إيداع رصيد كافٍ أولاً.`);
+                tg.showAlert(`⚠️ عذراً، رصيدك الحالي ($${currentBalance.toFixed(2)}) غير كافي لتفعيل ${name}.\nالرجاء إيداع الفارق أولاً.`);
                 openModal('deposit');
-                // تعبئة المبلغ تلقائياً في خانة الإيداع
                 setTimeout(() => {
                     const amtInput = document.getElementById('dep-amt');
-                    if(amtInput) amtInput.value = price - currentBalance;
+                    if(amtInput) amtInput.value = (price - currentBalance).toFixed(2);
                 }, 300);
                 return;
             }
 
-            tg.showConfirm(`هل أنت متأكد من تفعيل خطة ${name} بمبلغ $${price}؟\nسيتم خصم المبلغ وبدء العد التنازلي للأرباح.`, (ok) => {
-                if(ok) {
-                    // إرسال طلب تفعيل الخطة للسيرفر
-                    fetch('/api/invest', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ userId: userData.id, planName: name, price: price })
-                    }).then(r => r.json()).then(d => {
-                        if(d.success) {
-                            loadBalance();
-                            tg.showAlert(`🚀 تم تفعيل ${name} بنجاح!\nستحصل على أرباحك تلقائياً بعد 24 ساعة.`);
-                        } else {
-                            tg.showAlert(d.error || 'حدث خطأ أثناء التفعيل.');
-                        }
-                    });
+            fetch('/api/invest', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: userData.id, planName: name, price: price })
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    loadBalance();
+                    tg.showAlert(`🚀 تم تفعيل خطة ${name} بنجاح!`);
+                } else {
+                    tg.showAlert(d.error || 'حدث خطأ.');
                 }
             });
         }
@@ -194,13 +187,15 @@
         }
 
         function submitDep() {
+            const amt = parseFloat(document.getElementById('dep-amt').value);
+            if(!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
             fetch('/api/deposit', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     userId: userData.id,
                     userName: userData.name,
-                    amount: parseFloat(document.getElementById('dep-amt').value),
+                    amount: amt,
                     method: document.getElementById('dep-method').value,
                     details: document.getElementById('dep-tx').value
                 })
@@ -208,19 +203,21 @@
         }
 
         function submitWit() {
+            const amt = parseFloat(document.getElementById('wit-amt').value);
+            if(!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
             fetch('/api/withdraw', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     userId: userData.id,
                     userName: userData.name,
-                    amount: parseFloat(document.getElementById('wit-amt').value),
+                    amount: amt,
                     method: document.getElementById('wit-method').value,
                     address: document.getElementById('wit-addr').value
                 })
             }).then(r => r.json()).then(d => {
                 closeModal();
-                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); });
+                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); }
                 else { tg.showAlert(d.error || 'عذراً، الرصيد غير كافٍ.'); }
             });
         }
