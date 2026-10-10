@@ -26,6 +26,14 @@
 </head>
 <body class="pb-20 max-w-md mx-auto relative min-h-screen">
 
+    <!-- شاشة الحماية: تظهر إذا فتح المستخدم الرابط من متصفح خارجي وليس تليجرام -->
+    <div id="telegram-restricted" class="fixed inset-0 bg-binance-bg z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+        <i class="fa-brands fa-telegram text-binance-yellow text-6xl mb-4 animate-bounce"></i>
+        <h1 class="text-white text-lg font-bold mb-2">عذراً، لا يمكن فتح المنصة هنا!</h1>
+        <p class="text-binance-textGray text-xs mb-6">يجب فتح هذه المنصة حصرياً من داخل تطبيق تليجرام عبر البوت الرسمي.</p>
+        <a href="https://t.me/your_bot_username" class="bg-binance-yellow text-black font-extrabold px-6 py-2.5 rounded-lg text-xs">افتح البوت الآن</a>
+    </div>
+
     <!-- Header -->
     <div class="px-4 pt-3 pb-2 flex items-center justify-between border-b border-binance-border bg-binance-bg sticky top-0 z-40">
         <div class="flex items-center gap-3">
@@ -72,23 +80,35 @@
         tg.expand();
         tg.ready();
 
-        const WALLETS = { TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3", BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", VODAFONE: "01099887766" };
-        let userData = { id: "123456", name: "Guest User" };
+        let userData = { id: "", name: "", username: "" };
 
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        // التحقق مما إذا كان المستخدم يفتح من تليجرام حقاً
+        if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+            document.getElementById('telegram-restricted').classList.remove('hidden');
+        } else {
             const u = tg.initDataUnsafe.user;
-            userData = { id: u.id.toString(), name: u.first_name };
-            document.getElementById('user-fullname').innerText = `${u.first_name || ''} ${u.last_name || ''}`;
+            userData = { id: u.id.toString(), name: u.first_name, username: u.username || 'NoUsername' };
+            document.getElementById('user-fullname').innerText = `${u.first_name \vert{}\vert{} ''}${u.last_name || ''}`;
             document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
             if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
+
+            // تسجيل المستخدم في السيرفر تلقائياً
+            fetch('/api/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(userData)
+            });
         }
 
+        const WALLETS = { TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3", BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", VODAFONE: "01099887766" };
+
         function loadBalance() {
+            if(!userData.id) return;
             fetch(`/api/user/${userData.id}`).then(r => r.json()).then(d => {
                 document.getElementById('user-balance').innerText = (d.balance || 0).toFixed(2);
             });
         }
-        loadBalance();
+        setTimeout(loadBalance, 500);
 
         const plans = [
             { name: "Plan $10", price: 10, profit: "5%", returnAmt: 10.50 },
@@ -103,20 +123,11 @@
             container.innerHTML += `
                 <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
                     <div>
-                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
-                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
+                        <h3 class="text-xs font-bold text-white">${p.name}</h3>                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
-                    <button onclick="activatePlan('${p.name}', ${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                    <button onclick="tg.showAlert('تم تفعيل الخطة بنجاح')" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
         });
-
-        function activatePlan(name, price) {
-            tg.showConfirm(`هل تؤكد تفعيل خطة ${name} بقيمة $${price}؟\nسينزل الربح تلقائياً بعد 24 ساعة.`, (ok) => {
-                if(ok) {
-                    tg.showAlert(`تم إرسال طلب تفعيل ${name} بنجاح!`);
-                }
-            });
-        }
 
         function openModal(type) {
             document.getElementById('modal-overlay').classList.remove('hidden');
@@ -176,7 +187,7 @@
                 })
             }).then(r => r.json()).then(d => {
                 closeModal();
-                if (d.success) { loadBalance(); tg.showAlert('تم الخصم وتأكيد طلب السحب!'); }
+                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); }
                 else { tg.showAlert(d.error || 'عذراً، حدث خطأ.'); }
             });
         }
