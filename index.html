@@ -78,7 +78,7 @@
         if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
             const u = tg.initDataUnsafe.user;
             userData = { id: u.id.toString(), name: u.first_name, username: u.username || 'NoUsername' };
-            document.getElementById('user-fullname').innerText = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+            document.getElementById('user-fullname').innerText = `${u.first_name \vert{}\vert{} ''}${u.last_name || ''}`.trim();
             document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
             if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
         }
@@ -112,10 +112,9 @@
             container.innerHTML += `
                 <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
                     <div>
-                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
-                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
+                        <h3 class="text-xs font-bold text-white">${p.name}</h3>                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
-                    <button onclick="activatePlan('${p.name}', ${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
+                    <button onclick="activatePlan('${p.name}',${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
         });
 
