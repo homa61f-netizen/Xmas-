@@ -481,7 +481,7 @@
         .btn-activate:hover { background: var(--yellow-2); }
         .btn-activate:active { transform: scale(0.96); }
 
-        /* ============ MODAL ============ */
+        /* ============ MODAL (Bottom Sheet) ============ */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -772,6 +772,244 @@
             margin-bottom: 12px;
             opacity: 0.4;
         }
+
+        /* ============ TOAST ============ */
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: calc(100% - 32px);
+            max-width: 440px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-2);
+            border: 1px solid var(--border-2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .toast.removing {
+            animation: toastOut 0.3s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .toast.success .toast-icon { background: var(--green-bg); color: var(--green); }
+        .toast.error .toast-icon { background: var(--red-bg); color: var(--red); }
+        .toast.info .toast-icon { background: var(--yellow-bg); color: var(--yellow); }
+
+        .toast.success { border-color: rgba(14, 203, 129, 0.3); }
+        .toast.error { border-color: rgba(246, 70, 93, 0.3); }
+        .toast.info { border-color: rgba(252, 213, 53, 0.3); }
+
+        .toast-content { flex: 1; min-width: 0; }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .toast-msg {
+            font-size: 11px;
+            color: var(--text-2);
+            line-height: 1.4;
+        }
+
+        /* ============ SUCCESS MODAL ============ */
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-overlay.show {
+            display: flex;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success-modal {
+            background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 100%);
+            border: 1px solid var(--border-2);
+            border-radius: 20px;
+            padding: 28px 24px 20px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-modal::before {
+            content: '';
+            position: absolute;
+            top: -80px; left: 50%;
+            transform: translateX(-50%);
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(14, 203, 129, 0.15), transparent 70%);
+            pointer-events: none;
+        }
+
+        .success-modal.error::before {
+            background: radial-gradient(circle, rgba(246, 70, 93, 0.15), transparent 70%);
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.85); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .success-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--green-bg);
+            color: var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 18px;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 0 8px rgba(14, 203, 129, 0.05), 0 0 0 16px rgba(14, 203, 129, 0.02);
+        }
+
+        .success-modal.error .success-icon {
+            background: var(--red-bg);
+            color: var(--red);
+            box-shadow: 0 0 0 8px rgba(246, 70, 93, 0.05), 0 0 0 16px rgba(246, 70, 93, 0.02);
+        }
+
+        .success-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-subtitle {
+            font-size: 12px;
+            color: var(--text-2);
+            margin-bottom: 20px;
+            line-height: 1.5;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-details {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+
+        .success-detail-row + .success-detail-row {
+            border-top: 1px solid var(--border);
+        }
+
+        .success-detail-label {
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .success-detail-value {
+            color: var(--text);
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+        }
+
+        .success-detail-value.green { color: var(--green); }
+        .success-detail-value.yellow { color: var(--yellow); }
+
+        .success-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            background: var(--yellow);
+            color: #0B0E11;
+            transition: all 0.15s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-btn:active { transform: scale(0.97); }
+
+        .success-modal.error .success-btn {
+            background: var(--red);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -885,7 +1123,7 @@
 
 </div>
 
-<!-- Modal -->
+<!-- Modal (Bottom Sheet) -->
 <div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -899,6 +1137,22 @@
     </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Success Modal -->
+<div class="success-overlay" id="success-overlay" onclick="if(event.target===this)closeSuccessModal()">
+    <div class="success-modal" id="success-modal">
+        <div class="success-icon" id="success-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="success-title" id="success-title">تم بنجاح</div>
+        <div class="success-subtitle" id="success-subtitle"></div>
+        <div class="success-details" id="success-details" style="display:none;"></div>
+        <button class="success-btn" id="success-btn" onclick="closeSuccessModal()">تم</button>
+    </div>
+</div>
+
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
@@ -907,6 +1161,79 @@
     let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
     let currentBalance = 0;
     let balanceVisible = true;
+
+    // ================== Toast Notifications ==================
+    function showToast(type, title, msg = '') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icons = {
+            success: 'fa-check',
+            error: 'fa-xmark',
+            info: 'fa-info'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fa-solid ${icons[type] || 'fa-info'}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                ${msg ? `<div class="toast-msg">${msg}</div>` : ''}
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('removing');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // ================== Success Modal ==================
+    function showSuccessModal({ title, subtitle, details = [], isError = false, btnText = 'تم', onBtnClick = null }) {
+        const overlay = document.getElementById('success-overlay');
+        const modal = document.getElementById('success-modal');
+        const icon = document.getElementById('success-icon');
+        const titleEl = document.getElementById('success-title');
+        const subtitleEl = document.getElementById('success-subtitle');
+        const detailsEl = document.getElementById('success-details');
+        const btn = document.getElementById('success-btn');
+
+        modal.classList.toggle('error', isError);
+        icon.innerHTML = isError
+            ? '<i class="fa-solid fa-xmark"></i>'
+            : '<i class="fa-solid fa-check"></i>';
+
+        titleEl.innerText = title;
+        subtitleEl.innerText = subtitle || '';
+
+        if (details.length > 0) {
+            detailsEl.style.display = 'block';
+            detailsEl.innerHTML = details.map(d => `
+                <div class="success-detail-row">
+                    <span class="success-detail-label">${d.label}</span>
+                    <span class="success-detail-value ${d.color || ''}">${d.value}</span>
+                </div>
+            `).join('');
+        } else {
+            detailsEl.style.display = 'none';
+        }
+
+        btn.innerText = btnText;
+        btn.onclick = onBtnClick || closeSuccessModal;
+        overlay.classList.add('show');
+    }
+
+    function closeSuccessModal() {
+        document.getElementById('success-overlay').classList.remove('show');
+        // رجع السلوك الافتراضي
+        setTimeout(() => {
+            document.getElementById('success-btn').onclick = closeSuccessModal;
+        }, 100);
+    }
 
     // Load user data from Telegram
     if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
@@ -930,7 +1257,6 @@
     })
     .then(() => {
         loadBalance();
-        // Auto-refresh every 30 seconds
         setInterval(loadBalance, 30000);
     })
     .catch(err => console.error('register err:', err));
@@ -1037,12 +1363,24 @@
 
     function activatePlan(name, price) {
         if (currentBalance < price) {
-            tg.showAlert(`رصيدك غير كافٍ.\n\nالمطلوب: $${price}\nالمتاح: $${currentBalance.toFixed(2)}`);
-            openModal('deposit');
-            setTimeout(() => {
-                const el = document.getElementById('dep-amt');
-                if (el) el.value = (price - currentBalance).toFixed(2);
-            }, 300);
+            showSuccessModal({
+                title: 'رصيد غير كافٍ',
+                subtitle: `تحتاج إلى $${(price - currentBalance).toFixed(2)} إضافية لتفعيل خطة ${name}`,
+                details: [
+                    { label: 'المطلوب', value: `$${price}` },
+                    { label: 'المتاح', value: `$${currentBalance.toFixed(2)}`, color: 'yellow' }
+                ],
+                isError: true,
+                btnText: 'إيداع الآن',
+                onBtnClick: () => {
+                    closeSuccessModal();
+                    openModal('deposit');
+                    setTimeout(() => {
+                        const el = document.getElementById('dep-amt');
+                        if (el) el.value = (price - currentBalance).toFixed(2);
+                    }, 300);
+                }
+            });
             return;
         }
 
@@ -1055,17 +1393,21 @@
         .then(d => {
             if (d.success) {
                 loadBalance();
-                tg.showAlert(
-                    `تم تفعيل خطة ${name} بنجاح!\n\n` +
-                    `💰 المبلغ: $${price}\n` +
-                    `📈 العائد: $${d.investment.returnAmount}\n` +
-                    `⏰ تُضاف الأرباح تلقائياً خلال 24 ساعة`
-                );
+                showSuccessModal({
+                    title: 'تم تفعيل الخطة',
+                    subtitle: `خطة ${name} بدأت العمل وستُضاف الأرباح تلقائياً بعد 24 ساعة`,
+                    details: [
+                        { label: 'المبلغ المستثمر', value: `$${price}` },
+                        { label: 'العائد المتوقع', value: `$${d.investment.returnAmount}`, color: 'green' },
+                        { label: 'المدة', value: '24 ساعة', color: 'yellow' }
+                    ],
+                    btnText: 'حسناً'
+                });
             } else {
-                tg.showAlert(d.error || 'حدث خطأ.');
+                showToast('error', 'فشل تفعيل الخطة', d.error || 'حدث خطأ');
             }
         })
-        .catch(() => tg.showAlert('خطأ في الاتصال'));
+        .catch(() => showToast('error', 'خطأ في الاتصال', 'تحقق من الإنترنت وأعد المحاولة'));
     }
 
     function loadHistory() {
@@ -1221,13 +1563,16 @@
     function copyWallet() {
         const addr = document.getElementById('w-addr').innerText;
         navigator.clipboard.writeText(addr).then(() => {
-            tg.showAlert('تم نسخ العنوان');
+            showToast('success', 'تم النسخ', 'عنوان المحفظة في الحافظة');
         });
     }
 
     function submitDep() {
         const amt = parseFloat(document.getElementById('dep-amt').value);
-        if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
+        if (!amt || amt <= 0) {
+            showToast('error', 'مبلغ غير صحيح', 'الرجاء إدخال مبلغ أكبر من صفر');
+            return;
+        }
         fetch('/api/deposit', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -1241,15 +1586,18 @@
         })
         .then(() => {
             closeModal();
-            tg.showAlert('تم إرسال طلب الإيداع للمراجعة');
+            showToast('success', 'تم إرسال الطلب', 'سيتم مراجعة الإيداع خلال دقائق');
             setTimeout(loadHistory, 1000);
         })
-        .catch(() => tg.showAlert('خطأ في الاتصال'));
+        .catch(() => showToast('error', 'خطأ في الاتصال', 'تحقق من الإنترنت'));
     }
 
     function submitWit() {
         const amt = parseFloat(document.getElementById('wit-amt').value);
-        if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
+        if (!amt || amt <= 0) {
+            showToast('error', 'مبلغ غير صحيح', 'الرجاء إدخال مبلغ أكبر من صفر');
+            return;
+        }
         fetch('/api/withdraw', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -1266,13 +1614,13 @@
             closeModal();
             if (d.success) {
                 loadBalance();
-                tg.showAlert('تم إرسال طلب السحب');
+                showToast('success', 'تم إرسال الطلب', 'سيتم معالجة السحب خلال 24 ساعة');
                 setTimeout(loadHistory, 1000);
             } else {
-                tg.showAlert(d.error || 'الرصيد غير كافٍ');
+                showToast('error', 'فشل السحب', d.error || 'الرصيد غير كافٍ');
             }
         })
-        .catch(() => tg.showAlert('خطأ في الاتصال'));
+        .catch(() => showToast('error', 'خطأ في الاتصال', 'تحقق من الإنترنت'));
     }
 
     function closeModal() {
