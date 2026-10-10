@@ -47,9 +47,10 @@ async function saveTx(tx) {
         method: tx.method,
         amount: tx.amount.toString(),
         details: tx.details || '',
-        status: tx.status
+        status: tx.status,
+        created_at: Date.now().toString()
     });
-    await kv.expire(`tx:${tx.id}`, 604800); // 7 أيام
+    await kv.expire(`tx:${tx.id}`, 2592000); // 30 يوم
 }
 
 async function getTx(txId) {
@@ -62,12 +63,88 @@ async function getTx(txId) {
         method: data.method,
         amount: parseFloat(data.amount),
         details: data.details,
-        status: data.status
+        status: data.status,
+        created_at: parseInt(data.created_at || 0)
     };
 }
 
 async function updateTxStatus(txId, status) {
     await kv.hset(`tx:${txId}`, { status });
+}
+
+// ================== Investments (Plans) ==================
+async function getNextInvestId() {
+    return await kv.incr('invest_counter');
+}
+
+async function saveInvestment(inv) {
+    await kv.hset(`invest:${inv.id}`, {
+        user_id: inv.user_id,
+        plan_name: inv.plan_name,
+        price: inv.price.toString(),
+        return_amount: inv.return_amount.toString(),
+        profit_percent: inv.profit_percent.toString(),
+        status: inv.status, // ACTIVE | COMPLETED
+        created_at: inv.created_at.toString(),
+        expires_at: inv.expires_at.toString()
+    });
+    await kv.sadd(`user:${inv.user_id}:investments`, inv.id.toString());
+}
+
+async function getInvestment(invId) {
+    const data = await kv.hgetall(`invest:${invId}`);
+    if (!data || Object.keys(data).length === 0) return null;
+    return {
+        id: invId,
+        user_id: data.user_id,
+        plan_name: data.plan_name,
+        price: parseFloat(data.price),
+        return_amount: parseFloat(data.return_amount),
+        profit_percent: parseFloat(data.profit_percent),
+        status: data.status,
+        created_at: parseInt(data.created_at),
+        expires_at: parseInt(data.expires_at)
+    };
+}
+
+async function updateInvestmentStatus(invId, status) {
+    await kv.hset(`invest:${invId}`, { status });
+}
+
+async function getUserInvestments(userId) {
+    const ids = await kv.smembers(`user:${userId}:investments`);
+    if (!ids || ids.length === 0) return [];
+    const results = await Promise.all(ids.map(id => getInvestment(id)));
+    return results.filter(Boolean);
+}
+
+// ================== Auto-mature investments (24h) ==================
+async function matureInvestments(userId) {
+    const investments = await getUserInvestments(userId);
+    const now = Date.now();
+    let totalAdded = 0;
+
+    for (const inv of investments) {
+        if (inv.status === 'ACTIVE' && now >= inv.expires_at) {
+            // أضف العائد (رأس المال + الربح) للرصيد
+            const user = await getUser(userId);
+            if (user) {
+                await updateBalance(userId, user.balance + inv.return_amount);
+                totalAdded += inv.return_amount;
+            }
+            await updateInvestmentStatus(inv.id, 'COMPLETED');
+
+            // أرسل إشعار للمستخدم
+            bot.telegram.sendMessage(userId,
+                `🎉 *خطة ${inv.plan_name} انتهت!*\n\n` +
+                `💰 رأس المال: $${inv.price}\n` +
+                `📈 الربح: $${(inv.return_amount - inv.price).toFixed(2)}\n` +
+                `✅ *الإجمالي المضاف: $${inv.return_amount.toFixed(2)}*`,
+                { parse_mode: 'Markdown' }
+            ).catch(() => {});
+        }
+    }
+    return totalAdded;
 }
 
 // ================== Bot /start ==================
@@ -90,13 +167,10 @@ bot.start(async (ctx) => {
         );
     } catch (e) {
         console.error('start error:', e);
-        ctx.reply("حدث خطأ، حاول مرة أخرى.").catch(() => {});
     }
 });
 
-// ================== API Routes ==================
-
-// تسجيل المستخدم
+// ================== API: Register ==================
 app.post('/api/register', async (req, res) => {
     try {
         const { userId, name, username } = req.body;
@@ -108,6 +182,10 @@ app.post('/api/register', async (req, res) => {
         } else {
             await saveUser(userId, name || existing.full_name, username || existing.username, existing.balance);
         }
+
+        // معالجة الخطط المنتهية
+        await matureInvestments(userId);
+
         res.json({ success: true });
     } catch (e) {
         console.error('register error:', e);
@@ -115,10 +193,12 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// جلب رصيد المستخدم
+// ================== API: Get User (with auto-mature) ==================
 app.get('/api/user/:id', async (req, res) => {
     try {
-        const user = await getUser(req.params.id);
+        const userId = req.params.id;
+        await matureInvestments(userId);
+        const user = await getUser(userId);
         res.json(user || { balance: 0 });
     } catch (e) {
         console.error('getUser error:', e);
@@ -126,32 +206,155 @@ app.get('/api/user/:id', async (req, res) => {
     }
 });
 
-// تفعيل خطة استثمارية
+// ================== API: Get User Stats ==================
+app.get('/api/user/:id/stats', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        await matureInvestments(userId);
+
+        const investments = await getUserInvestments(userId);
+        const activeCount = investments.filter(i => i.status === 'ACTIVE').length;
+        const totalProfit = investments
+            .filter(i => i.status === 'COMPLETED')
+            .reduce((sum, i) => sum + (i.return_amount - i.price), 0);
+
+        // إجمالي الإيداع
+        const txIds = await kv.smembers(`user:${userId}:txs`).catch(() => []);
+        let totalDeposit = 0;
+        if (txIds && txIds.length > 0) {
+            const txs = await Promise.all(txIds.map(id => getTx(id)));
+            totalDeposit = txs
+                .filter(t => t && t.type === 'DEPOSIT' && t.status === 'APPROVED')
+                .reduce((s, t) => s + t.amount, 0);
+        }
+
+        res.json({
+            activePlans: activeCount,
+            totalProfit: totalProfit.toFixed(2),
+            totalDeposit: totalDeposit.toFixed(2),
+            totalInvestments: investments.length
+        });
+    } catch (e) {
+        console.error('stats error:', e);
+        res.status(500).json({ activePlans: 0, totalProfit: '0.00', totalDeposit: '0.00' });
+    }
+});
+
+// ================== API: Get User History ==================
+app.get('/api/user/:id/history', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const txIds = await kv.smembers(`user:${userId}:txs`).catch(() => []);
+        const investIds = await kv.smembers(`user:${userId}:investments`).catch(() => []);
+
+        const txs = txIds && txIds.length > 0
+            ? (await Promise.all(txIds.map(id => getTx(id)))).filter(Boolean)
+            : [];
+        const invests = investIds && investIds.length > 0
+            ? (await Promise.all(investIds.map(id => getInvestment(id)))).filter(Boolean)
+            : [];
+
+        const history = [
+            ...txs.map(t => ({
+                id: 'tx_' + t.id,
+                type: t.type,
+                amount: t.amount,
+                method: t.method,
+                details: t.details,
+                status: t.status,
+                created_at: t.created_at
+            })),
+            ...invests.map(i => ({
+                id: 'inv_' + i.id,
+                type: 'INVEST',
+                amount: i.price,
+                return_amount: i.return_amount,
+                method: i.plan_name,
+                details: `+${i.profit_percent}%`,
+                status: i.status,
+                created_at: i.created_at
+            }))
+        ].sort((a, b) => b.created_at - a.created_at);
+
+        res.json(history);
+    } catch (e) {
+        console.error('history error:', e);
+        res.status(500).json([]);
+    }
+});
+
+// ================== API: Invest ==================
 app.post('/api/invest', async (req, res) => {
     try {
         const { userId, planName, price } = req.body;
-        const user = await getUser(userId);
 
+        // معالجة أي خطط منتهية أولاً
+        await matureInvestments(userId);
+
+        const user = await getUser(userId);
         if (!user || user.balance < price) {
             return res.status(400).json({ success: false, error: "عذراً، رصيدك غير كافٍ لتفعيل هذه الخطة." });
         }
 
+        // احسب العائد
+        const planReturns = {
+            'STARTER':    { profit: 30, returnAmt: 13.00 },
+            'PRO':        { profit: 35, returnAmt: 67.50 },
+            'VIP':        { profit: 40, returnAmt: 140.00 },
+            'ELITE':      { profit: 50, returnAmt: 750.00 },
+            'DIAMOND':    { profit: 60, returnAmt: 1600.00 },
+            'BLACK VIP':  { profit: 80, returnAmt: 9000.00 }
+        };
+
+        const plan = planReturns[planName];
+        if (!plan) {
+            return res.status(400).json({ success: false, error: "الخطة غير معروفة." });
+        }
+
+        // خصم الرصيد
         await updateBalance(userId, user.balance - price);
 
+        // إنشاء الاستثمار
+        const invId = await getNextInvestId();
+        const now = Date.now();
+        const expiresAt = now + (24 * 60 * 60 * 1000); // 24 ساعة
+
+        await saveInvestment({
+            id: invId,
+            user_id: userId,
+            plan_name: planName,
+            price: price,
+            return_amount: plan.returnAmt,
+            profit_percent: plan.profit,
+            status: 'ACTIVE',
+            created_at: now,
+            expires_at: expiresAt
+        });
+
+        // إشعار للأدمن
         await bot.telegram.sendMessage(
             ADMIN_ID,
-            `📊 *استثمار جديد!*\n\n👤 المستخدم: \`${userId}\`\n🚀 الخطة: ${planName}\n💰 المبلغ الخصم: $${price} USD`,
+            `📊 *استثمار جديد!*\n\n👤 المستخدم: \`${userId}\`\n🚀 الخطة: ${planName}\n💰 المبلغ: $${price} USD\n📈 الربح المتوقع: +${plan.profit}%\n⏰ ينتهي بعد 24 ساعة`,
             { parse_mode: 'Markdown' }
         ).catch(() => {});
 
-        res.json({ success: true });
+        res.json({
+            success: true,
+            investment: {
+                id: invId,
+                planName,
+                price,
+                returnAmount: plan.returnAmt,
+                expiresAt: expiresAt
+            }
+        });
     } catch (e) {
         console.error('invest error:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// طلب إيداع
+// ================== API: Deposit ==================
 app.post('/api/deposit', async (req, res) => {
     try {
         const { userId, userName, amount, method, details } = req.body;
@@ -167,6 +370,7 @@ app.post('/api/deposit', async (req, res) => {
             details: details,
             status: 'PENDING'
         });
+        await kv.sadd(`user:${userId}:txs`, txId.toString());
 
         await bot.telegram.sendMessage(ADMIN_ID,
             `📥 *طلب إيداع جديد!*\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💰 المبلغ: *$${amount} USD*\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details || 'لا توجد'}\``,
@@ -178,19 +382,21 @@ app.post('/api/deposit', async (req, res) => {
             }
         ).catch(() => {});
 
-        res.json({ success: true });
+        res.json({ success: true, txId });
     } catch (e) {
         console.error('deposit error:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// طلب سحب
+// ================== API: Withdraw ==================
 app.post('/api/withdraw', async (req, res) => {
     try {
         const { userId, userName, amount, method, address } = req.body;
-        const user = await getUser(userId);
 
+        await matureInvestments(userId);
+
+        const user = await getUser(userId);
         if (!user || user.balance < amount) {
             return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
         }
@@ -207,9 +413,10 @@ app.post('/api/withdraw', async (req, res) => {
             details: address,
             status: 'PENDING'
         });
+        await kv.sadd(`user:${userId}:txs`, txId.toString());
 
         await bot.telegram.sendMessage(ADMIN_ID,
-            `📤 *طلب سحب جديد!*\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💸 المبلغ: *$${amount} USD*\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
+            `📤 *طلب سحب جديد!*\n\n👤 المستخدم: ${userName || 'مستخدم'} (\`${userId}\`)\n💸 المبلغ: *$${amount} USD*\n🌐 الوسيلة: ${method}\n📍 العنوان: \`${address}\``,
             {
                 parse_mode: 'Markdown',
                 ...Markup.inlineKeyboard([
@@ -218,7 +425,7 @@ app.post('/api/withdraw', async (req, res) => {
             }
         ).catch(() => {});
 
-        res.json({ success: true });
+        res.json({ success: true, txId });
     } catch (e) {
         console.error('withdraw error:', e);
         res.status(500).json({ success: false, error: e.message });
@@ -290,7 +497,7 @@ app.post('/api/webhook', async (req, res) => {
     }
 });
 
-// ================== Health Check ==================
+// ================== Health ==================
 app.get('/api/health', (req, res) => {
     res.json({ ok: true, time: new Date().toISOString() });
 });
