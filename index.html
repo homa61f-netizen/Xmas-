@@ -47,8 +47,12 @@
                 <span class="text-xs font-bold text-binance-textGray num-font">USD</span>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="openModal('deposit')" class="bg-binance-yellow text-black font-extrabold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2"><i class="fa-solid fa-arrow-down-to-line"></i> إيداع</button>
-                <button onclick="openModal('withdraw')" class="bg-binance-input text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 border border-binance-border"><i class="fa-solid fa-arrow-up-from-line"></i> سحب</button>
+                <button onclick="openModal('deposit')" class="bg-binance-yellow text-black font-extrabold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-down-to-line"></i> إيداع
+                </button>
+                <button onclick="openModal('withdraw')" class="bg-binance-input text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 border border-binance-border">
+                    <i class="fa-solid fa-arrow-up-from-line"></i> سحب
+                </button>
             </div>
         </section>
 
@@ -75,30 +79,45 @@
         let userData = { id: "123456", name: "مستخدم تجريبي", username: "user" };
         let currentBalance = 0;
 
+        // تحميل بيانات المستخدم من تليجرام
         if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
             const u = tg.initDataUnsafe.user;
-            userData = { id: u.id.toString(), name: u.first_name, username: u.username || 'NoUsername' };
-            document.getElementById('user-fullname').innerText = `${u.first_name \vert{}\vert{} ''}${u.last_name || ''}`.trim();
+            userData = {
+                id: u.id.toString(),
+                name: u.first_name || 'مستخدم',
+                username: u.username || 'NoUsername'
+            };
+            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+            document.getElementById('user-fullname').innerText = fullName || 'مستخدم';
             document.getElementById('user-username').innerText = u.username ? `@${u.username}` : `ID: ${u.id}`;
             if (u.photo_url) document.getElementById('user-avatar').src = u.photo_url;
         }
 
+        // تسجيل المستخدم في السيرفر
         fetch('/api/register', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(userData)
-        }).then(() => loadBalance());
+        }).then(() => loadBalance()).catch(err => console.error('register err:', err));
 
-        const WALLETS = { TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3", BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", VODAFONE: "01099887766" };
+        const WALLETS = {
+            TRC20: "TX9z3kR12mX8pQ7nL4vW6sY0jH5aB1c2D3",
+            BEP20: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+            VODAFONE: "01099887766"
+        };
 
         function loadBalance() {
-            if(!userData.id) return;
-            fetch(`/api/user/${userData.id}`).then(r => r.json()).then(d => {
-                currentBalance = d.balance || 0;
-                document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
-            });
+            if (!userData.id) return;
+            fetch(`/api/user/${userData.id}`)
+                .then(r => r.json())
+                .then(d => {
+                    currentBalance = d.balance || 0;
+                    document.getElementById('user-balance').innerText = currentBalance.toFixed(2);
+                })
+                .catch(err => console.error('balance err:', err));
         }
 
+        // الخطط الاستثمارية
         const plans = [
             { name: "Plan $10", price: 10, profit: "5%", returnAmt: 10.50 },
             { name: "Plan $20", price: 20, profit: "7%", returnAmt: 21.40 },
@@ -112,7 +131,8 @@
             container.innerHTML += `
                 <div class="bg-binance-card rounded-xl p-3 border border-binance-border flex justify-between items-center">
                     <div>
-                        <h3 class="text-xs font-bold text-white">${p.name}</h3>                         <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
+                        <h3 class="text-xs font-bold text-white">${p.name}</h3>
+                        <span class="text-[10px] text-binance-green num-font">عائد $${p.returnAmt} (${p.profit})</span>
                     </div>
                     <button onclick="activatePlan('${p.name}',${p.price})" class="bg-binance-yellow text-black font-bold px-3 py-1 rounded text-xs">تفعيل</button>
                 </div>`;
@@ -124,7 +144,7 @@
                 openModal('deposit');
                 setTimeout(() => {
                     const amtInput = document.getElementById('dep-amt');
-                    if(amtInput) amtInput.value = (price - currentBalance).toFixed(2);
+                    if (amtInput) amtInput.value = (price - currentBalance).toFixed(2);
                 }, 300);
                 return;
             }
@@ -133,14 +153,17 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ userId: userData.id, planName: name, price: price })
-            }).then(r => r.json()).then(d => {
-                if(d.success) {
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
                     loadBalance();
                     tg.showAlert(`🚀 تم تفعيل ${name} بنجاح!`);
                 } else {
                     tg.showAlert(d.error || 'حدث خطأ.');
                 }
-            });
+            })
+            .catch(err => tg.showAlert('خطأ في الاتصال بالسيرفر'));
         }
 
         function openModal(type) {
@@ -176,7 +199,7 @@
 
         function submitDep() {
             const amt = parseFloat(document.getElementById('dep-amt').value);
-            if(!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
+            if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
             fetch('/api/deposit', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -187,12 +210,14 @@
                     method: document.getElementById('dep-method').value,
                     details: document.getElementById('dep-tx').value
                 })
-            }).then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة!'); });
+            })
+            .then(() => { closeModal(); tg.showAlert('تم إرسال طلب الإيداع للمراجعة!'); })
+            .catch(() => tg.showAlert('خطأ في الاتصال'));
         }
 
         function submitWit() {
             const amt = parseFloat(document.getElementById('wit-amt').value);
-            if(!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
+            if (!amt || amt <= 0) { tg.showAlert('الرجاء إدخال مبلغ صحيح'); return; }
             fetch('/api/withdraw', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -203,14 +228,23 @@
                     method: document.getElementById('wit-method').value,
                     address: document.getElementById('wit-addr').value
                 })
-            }).then(r => r.json()).then(d => {
+            })
+            .then(r => r.json())
+            .then(d => {
                 closeModal();
-                if (d.success) { loadBalance(); tg.showAlert('تم إرسال طلب السحب بنجاح!'); }
-                else { tg.showAlert(d.error || 'عذراً، الرصيد غير كافٍ.'); }
-            });
+                if (d.success) {
+                    loadBalance();
+                    tg.showAlert('تم إرسال طلب السحب بنجاح!');
+                } else {
+                    tg.showAlert(d.error || 'عذراً، الرصيد غير كافٍ.');
+                }
+            })
+            .catch(() => tg.showAlert('خطأ في الاتصال'));
         }
 
-        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
