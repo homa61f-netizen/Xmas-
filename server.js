@@ -6,7 +6,7 @@ const { kv } = require('@vercel/kv');
 const app = express();
 app.use(express.json());
 
-const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAHsg7CDOZ_Dr5v2XxOXVVPZvXp6THu38ew";
+const BOT_TOKEN = process.env.BOT_TOKEN || "8908252305:AAFnTvaJNt4eNCd9-bRNIhqnmyVSEGu9NIk";
 const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://xmas-gwhe.vercel.app";
 
