@@ -7,12 +7,11 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAGUDN9r7F9EJoOzLgbrj0wFRMjekClJzKw";
+const BOT_TOKEN = process.env.BOT_TOKEN || "8939362456:AAHsg7CDOZ_Dr5v2XxOXVVPZvXp6THu38ew";
 const ADMIN_ID = process.env.ADMIN_ID || "8889600549";
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- قاعدة البيانات SQLite ---
-// ملاحظة: في Vercel يتم حفظ الملفات مؤقتاً، لذا يفضل ربط قاعدة بيانات سحابية لاحقاً للإنتاج الفعلي
+// قاعدة البيانات SQLite المؤقتة
 const db = new sqlite3.Database('./platform.db', (err) => {
     if (err) console.error("خطأ في قاعدة البيانات:", err.message);
 });
@@ -24,17 +23,7 @@ db.serialize(() => {
         username TEXT,
         balance REAL DEFAULT 0.0
     )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS investments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT,
-        plan_name TEXT,
-        amount REAL,
-        return_amount REAL,
-        end_time INTEGER,
-        status TEXT DEFAULT 'ACTIVE'
-    )`);
-
+8889600549
     db.run(`CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT,
@@ -46,13 +35,12 @@ db.serialize(() => {
     )`);
 });
 
-// --- أوامر البوت ---
+// أوامر البوت عند الضغط على Start
 bot.start((ctx) => {
     const u = ctx.from;
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
         [u.id.toString(), u.first_name, u.username || '', u.first_name, u.username || '']);
     
-    // الرابط التلقائي لمنصة Vercel
     const webAppUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://your-domain.vercel.app";
     
     ctx.reply(`أهلاً بك ${u.first_name} في منصة الاستثمار السريع!`, 
@@ -62,7 +50,69 @@ bot.start((ctx) => {
     );
 });
 
-// --- معالجة قرارات الأدمن (موافقة / رفض) ---
+// تسجيل المستخدم من الـ Web App تلقائياً
+app.post('/api/register', (req, res) => {
+    const { userId, name, username } = req.body;
+    if (!userId) return res.status(400).json({ success: false });
+    db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
+        [userId, name, username, name, username]);
+    res.json({ success: true });
+});
+
+// جلب رصيد المستخدم
+app.get('/api/user/:id', (req, res) => {
+    db.get(`SELECT * FROM users WHERE user_id = ?`, [req.params.id], (err, row) => {
+        res.json(row || { balance: 0.0 });
+    });
+});
+
+// طلب إيداع وإرساله للأدمن مع أزرار
+app.post('/api/deposit', (req, res) => {
+    const { userId, userName, amount, method, details } = req.body;
+    db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'DEPOSIT', ?, ?, ?)`,
+        [userId, method, amount, details], function(err) {
+            if (err) return res.status(500).json({ success: false });
+            const txId = this.lastID;
+            bot.telegram.sendMessage(ADMIN_ID, 
+                `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details}\``,
+                {
+                    parse_mode: 'Markdown',
+                    ...Markup.inlineKeyboard([
+                        [Markup.button.callback('✅ موافقة', `approve_dep_${txId}`), Markup.button.callback('❌ رفض', `reject_dep_${txId}`)]
+                    ])
+                }
+            ).catch(() => {});
+            res.json({ success: true });
+        });
+});
+
+// طلب سحب وإرساله للأدمن مع أزرار
+app.post('/api/withdraw', (req, res) => {
+    const { userId, userName, amount, method, address } = req.body;
+    db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
+        if (!user || user.balance < amount) {
+            return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
+        }
+        // خصم المبلغ فوراً لحين المراجعة
+        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId]);
+        db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
+            [userId, method, amount, address], function(err) {
+                const txId = this.lastID;
+                bot.telegram.sendMessage(ADMIN_ID,
+                    `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
+                    {
+                        parse_mode: 'Markdown',
+                        ...Markup.inlineKeyboard([
+                            [Markup.button.callback('✅ موافقة', `approve_wit_${txId}`), Markup.button.callback('❌ رفض', `reject_wit_${txId}`)]
+                        ])
+                    }
+                ).catch(() => {});
+                res.json({ success: true });
+            });
+    });
+});
+
+// معالجة أزرار الأدمن (موافقة / رفض)
 bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
     const action = ctx.match[1];
     const type = ctx.match[2];
@@ -85,6 +135,7 @@ bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
         } else {
             db.run(`UPDATE transactions SET status = 'REJECTED' WHERE id = ?`, [txId]);
             if (type === 'wit') {
+                // إعادة المبلغ في حال رفض السحب
                 db.run(`UPDATE users SET balance = balance + ? WHERE user_id = ?`, [tx.amount, tx.user_id]);
                 bot.telegram.sendMessage(tx.user_id, `❌ **تم رفض طلب السحب.**\nتم إعادة $${tx.amount} إلى رصيد محفظتك.`, { parse_mode: 'Markdown' }).catch(() => {});
             } else {
@@ -95,57 +146,7 @@ bot.action(/^(approve|reject)_(dep|wit)_(\d+)$/, async (ctx) => {
     });
 });
 
-// --- مسارات الـ API للواجهة الأمامية ---
-app.get('/api/user/:id', (req, res) => {
-    db.get(`SELECT * FROM users WHERE user_id = ?`, [req.params.id], (err, row) => {
-        res.json(row || { balance: 0.0 });
-    });
-});
-
-app.post('/api/deposit', (req, res) => {
-    const { userId, userName, amount, method, details } = req.body;
-    db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'DEPOSIT', ?, ?, ?)`,
-        [userId, method, amount, details], function(err) {
-            if (err) return res.status(500).json({ success: false });
-            const txId = this.lastID;
-            bot.telegram.sendMessage(ADMIN_ID, 
-                `📥 **طلب إيداع جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💰 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n🔍 التفاصيل: \`${details}\``,
-                {
-                    parse_mode: 'Markdown',
-                    ...Markup.inlineKeyboard([
-                        [Markup.button.callback('✅ موافقة', `approve_dep_${txId}`), Markup.button.callback('❌ رفض', `reject_dep_${txId}`)]
-                    ])
-                }
-            ).catch(() => {});
-            res.json({ success: true });
-        });
-});
-
-app.post('/api/withdraw', (req, res) => {
-    const { userId, userName, amount, method, address } = req.body;
-    db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
-        if (!user || user.balance < amount) {
-            return res.status(400).json({ success: false, error: "الرصيد غير كافٍ" });
-        }
-        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [amount, userId]);
-        db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'WITHDRAW', ?, ?, ?)`,
-            [userId, method, amount, address], function(err) {
-                const txId = this.lastID;
-                bot.telegram.sendMessage(ADMIN_ID,
-                    `📤 **طلب سحب جديد!**\n\n👤 المستخدم: ${userName} (\`${userId}\`)\n💸 المبلغ: **$${amount} USD**\n🌐 الوسيلة: ${method}\n📍 العنوان/الرقم: \`${address}\``,
-                    {
-                        parse_mode: 'Markdown',
-                        ...Markup.inlineKeyboard([
-                            [Markup.button.callback('✅ موافقة', `approve_wit_${txId}`), Markup.button.callback('❌ رفض', `reject_wit_${txId}`)]
-                        ])
-                    }
-                ).catch(() => {});
-                res.json({ success: true });
-            });
-    });
-});
-
-// --- استقبال وتوجيه تحديثات تليجرام عبر Webhook (مطلوب لـ Vercel) ---
+// استقبال وتوجيه تحديثات تليجرام Webhook
 app.post(`/api/webhook`, (req, res) => {
     bot.handleUpdate(req.body, res).then(() => {
         res.status(200).send('OK');
@@ -154,10 +155,8 @@ app.post(`/api/webhook`, (req, res) => {
     });
 });
 
-// توجيه أي مسار آخر لفتح الواجهة الأمامية
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// تصدير التطبيق ليعمل بنظام Vercel Serverless
 module.exports = app;
