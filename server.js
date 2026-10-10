@@ -23,7 +23,7 @@ db.serialize(() => {
         username TEXT,
         balance REAL DEFAULT 0.0
     )`);
-8889600549
+
     db.run(`CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT,
@@ -41,7 +41,7 @@ bot.start((ctx) => {
     db.run(`INSERT INTO users (user_id, full_name, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET full_name=?, username=?`,
         [u.id.toString(), u.first_name, u.username || '', u.first_name, u.username || '']);
     
-    const webAppUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://your-domain.vercel.app";
+    const webAppUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://xmas-n11fcwtmy-gwhe.vercel.app";
     
     ctx.reply(`أهلاً بك ${u.first_name} في منصة الاستثمار السريع!`, 
         Markup.inlineKeyboard([
@@ -66,9 +66,29 @@ app.get('/api/user/:id', (req, res) => {
     });
 });
 
+// تفعيل الخطة الاستثمارية وخصم الرصيد فوراً
+app.post('/api/invest', (req, res) => {
+    const { userId, planName, price } = req.body;
+    db.get(`SELECT balance FROM users WHERE user_id = ?`, [userId], (err, user) => {
+        if (!user || user.balance < price) {
+            return res.status(400).json({ success: false, error: "عذراً، رصيدك غير كافٍ لتفعيل هذه الخطة." });
+        }
+        db.run(`UPDATE users SET balance = balance - ? WHERE user_id = ?`, [price, userId], (err) => {
+            if (err) return res.status(500).json({ success: false, error: "خطأ في الخادم" });
+            
+            // إشعار للأدمن بتفعيل خطة استثمارية
+            bot.telegram.sendMessage(ADMIN_ID, `📊 **استثمار جديد!**\n\n👤 المستخدم: \`${userId}\`\n🚀 الخطة: ${planName}\n💰 المبلغ الخصم: $${price} USD`, { parse_mode: 'Markdown' }).catch(() => {});
+            
+            res.json({ success: true });
+        });
+    });
+});
+
 // طلب إيداع وإرساله للأدمن مع أزرار
 app.post('/api/deposit', (req, res) => {
     const { userId, userName, amount, method, details } = req.body;
+    if(!amount || isNaN(amount)) return res.status(400).json({ success: false });
+    
     db.run(`INSERT INTO transactions (user_id, type, method, amount, details) VALUES (?, 'DEPOSIT', ?, ?, ?)`,
         [userId, method, amount, details], function(err) {
             if (err) return res.status(500).json({ success: false });
