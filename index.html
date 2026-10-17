@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0B0E11">
-    <title>VIP Invest Pro</title>
+    <title>Binvest</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1010,9 +1010,601 @@
             background: var(--red);
             color: #fff;
         }
+
+        /* ==========================================
+           SPLASH SCREEN - BINVEST
+           ========================================== */
+        .splash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #0B0E11;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.7s ease;
+        }
+
+        .splash.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(252, 213, 53, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(252, 213, 53, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+            animation: splashGridMove 20s linear infinite;
+        }
+
+        @keyframes splashGridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        .splash-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            animation: splashGlowPulse 4s ease-in-out infinite;
+        }
+
+        .splash-glow-1 {
+            top: -100px; right: -100px;
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(252, 213, 53, 0.25), transparent 70%);
+        }
+
+        .splash-glow-2 {
+            bottom: -100px; left: -100px;
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(14, 203, 129, 0.15), transparent 70%);
+            animation-delay: 2s;
+        }
+
+        @keyframes splashGlowPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        .splash-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            animation: splashFadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        @keyframes splashFadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-logo-container {
+            position: relative;
+            width: 140px; height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .splash-logo-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .splash-logo-ring-outer {
+            width: 140px; height: 140px;
+            border-top-color: var(--yellow);
+            border-right-color: rgba(252, 213, 53, 0.3);
+            animation: splashSpin 3s linear infinite;
+        }
+
+        .splash-logo-ring-middle {
+            width: 110px; height: 110px;
+            border-bottom-color: var(--green);
+            border-left-color: rgba(14, 203, 129, 0.3);
+            animation: splashSpinReverse 2.5s linear infinite;
+        }
+
+        .splash-logo-core {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1E2329, #0B0E11);
+            border: 1.5px solid var(--yellow-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(252, 213, 53, 0.3), inset 0 0 20px rgba(252, 213, 53, 0.1);
+            animation: splashCorePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes splashCorePulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(252, 213, 53, 0.3), inset 0 0 20px rgba(252, 213, 53, 0.1); }
+            50% { box-shadow: 0 0 45px rgba(252, 213, 53, 0.6), inset 0 0 25px rgba(252, 213, 53, 0.2); }
+        }
+
+        .splash-logo-svg { width: 55px; height: 55px; }
+
+        .splash-logo-v {
+            stroke-dasharray: 150;
+            stroke-dashoffset: 150;
+            animation: splashDrawV 1.5s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+        }
+
+        @keyframes splashDrawV { to { stroke-dashoffset: 0; } }
+
+        .splash-logo-dot { opacity: 0; animation: splashDotAppear 0.6s ease-out forwards; }
+        .splash-logo-dot-1 { animation-delay: 1.5s; }
+        .splash-logo-dot-2 { animation-delay: 1.7s; }
+        .splash-logo-dot-3 { animation-delay: 1.9s; }
+
+        @keyframes splashDotAppear {
+            0% { opacity: 0; transform: scale(0); }
+            70% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .splash-logo-particles span {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: var(--yellow);
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            box-shadow: 0 0 8px var(--yellow);
+            animation: splashParticleOrbit 4s linear infinite;
+        }
+
+        .splash-logo-particles span:nth-child(1) { animation-delay: 0s; --radius: 70px; --angle-start: 0deg; }
+        .splash-logo-particles span:nth-child(2) { animation-delay: -0.8s; --radius: 70px; --angle-start: 72deg; }
+        .splash-logo-particles span:nth-child(3) { animation-delay: -1.6s; --radius: 70px; --angle-start: 144deg; }
+        .splash-logo-particles span:nth-child(4) { animation-delay: -2.4s; --radius: 70px; --angle-start: 216deg; }
+        .splash-logo-particles span:nth-child(5) { animation-delay: -3.2s; --radius: 70px; --angle-start: 288deg; }
+
+        @keyframes splashParticleOrbit {
+            from {
+                transform: rotate(var(--angle-start)) translateX(var(--radius)) rotate(calc(var(--angle-start) * -1));
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            to {
+                transform: rotate(calc(var(--angle-start) + 360deg)) translateX(var(--radius)) rotate(calc((var(--angle-start) + 360deg) * -1));
+                opacity: 0;
+            }
+        }
+
+        @keyframes splashSpin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes splashSpinReverse {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+
+        .splash-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-title-bin {
+            background: linear-gradient(135deg, #FFE55C 0%, #FCD535 50%, #F0B90B 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 12px rgba(252, 213, 53, 0.6));
+        }
+
+        .splash-title-vest {
+            background: linear-gradient(135deg, #FFFFFF 0%, #EAECEF 50%, #B7BDC6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(234, 236, 239, 0.3));
+        }
+
+        .splash-subtitle {
+            font-size: 12px;
+            color: var(--text-2);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 36px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .splash-subtitle i { color: var(--green); font-size: 11px; }
+
+        .splash-loader-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .splash-loader-dual {
+            position: relative;
+            width: 90px; height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-loader-spinner {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .splash-loader-spinner-1 {
+            width: 90px; height: 90px;
+            border-top-color: var(--yellow);
+            border-right-color: var(--yellow);
+            animation: splashSpinDual1 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            box-shadow: 0 0 20px rgba(252, 213, 53, 0.3);
+        }
+
+        .splash-loader-spinner-2 {
+            width: 65px; height: 65px;
+            border-bottom-color: var(--green);
+            border-left-color: var(--green);
+            animation: splashSpinDual2 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            box-shadow: 0 0 15px rgba(14, 203, 129, 0.3);
+        }
+
+        .splash-loader-spinner-3 {
+            width: 42px; height: 42px;
+            border-top-color: rgba(252, 213, 53, 0.5);
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+            border-left-color: rgba(252, 213, 53, 0.5);
+            animation: splashSpinDual1 2s linear infinite reverse;
+        }
+
+        @keyframes splashSpinDual1 {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes splashSpinDual2 {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+
+        .splash-loader-icon {
+            position: relative;
+            z-index: 3;
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--yellow), var(--yellow-2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0B0E11;
+            font-size: 14px;
+            box-shadow: 0 0 20px rgba(252, 213, 53, 0.7), 0 0 40px rgba(252, 213, 53, 0.4);
+            animation: splashBoltPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes splashBoltPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+
+        .splash-loader-text {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-2);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .splash-loader-dots { display: inline-block; color: var(--yellow); animation: splashDotsBlink 1.5s ease-in-out infinite; }
+
+        @keyframes splashDotsBlink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .splash-progress-wrap {
+            width: 100%;
+            max-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+
+        .splash-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--card-3);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .splash-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--yellow-2), var(--yellow), #FFE55C);
+            border-radius: 2px;
+            transition: width 0.3s ease-out;
+            box-shadow: 0 0 10px rgba(252, 213, 53, 0.8);
+            position: relative;
+        }
+
+        .splash-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            width: 30px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6));
+            animation: splashShimmer 1s linear infinite;
+        }
+
+        @keyframes splashShimmer {
+            0% { transform: translateX(-30px); }
+            100% { transform: translateX(30px); }
+        }
+
+        .splash-progress-percent {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--yellow);
+            min-width: 42px;
+            text-align: left;
+            letter-spacing: 0.5px;
+        }
+
+        .splash-footer {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .splash-footer-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--text-3);
+            font-weight: 500;
+            padding: 5px 10px;
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .splash-footer-badge i { color: var(--yellow); font-size: 9px; }
+
+        .splash-version {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 2px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 380px) {
+            .splash-title { font-size: 28px; letter-spacing: 2px; }
+            .splash-logo-container { width: 120px; height: 120px; }
+            .splash-logo-ring-outer { width: 120px; height: 120px; }
+            .splash-logo-ring-middle { width: 95px; height: 95px; }
+            .splash-logo-core { width: 70px; height: 70px; }
+            .splash-footer { gap: 8px; }
+            .splash-footer-badge { font-size: 9px; padding: 4px 8px; }
+        }
     </style>
 </head>
 <body>
+
+<!-- ============ SPLASH SCREEN - BINVEST ============ -->
+<div id="splashScreen" class="splash">
+    <div class="splash-bg-grid"></div>
+    <div class="splash-glow splash-glow-1"></div>
+    <div class="splash-glow splash-glow-2"></div>
+    
+    <div class="splash-content">
+        <div class="splash-logo-container">
+            <div class="splash-logo-ring splash-logo-ring-outer"></div>
+            <div class="splash-logo-ring splash-logo-ring-middle"></div>
+            <div class="splash-logo-core">
+                <svg class="splash-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FCD535;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#F0B90B;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#FFE55C;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M 25 25 L 50 75 L 75 25" 
+                          stroke="url(#goldGrad)" 
+                          stroke-width="7" 
+                          fill="none" 
+                          stroke-linecap="round" 
+                          stroke-linejoin="round"
+                          filter="url(#glow)"
+                          class="splash-logo-v"/>
+                    <circle cx="50" cy="20" r="3" fill="#FCD535" class="splash-logo-dot splash-logo-dot-1"/>
+                    <circle cx="20" cy="50" r="2" fill="#FCD535" class="splash-logo-dot splash-logo-dot-2"/>
+                    <circle cx="80" cy="50" r="2" fill="#FCD535" class="splash-logo-dot splash-logo-dot-3"/>
+                </svg>
+            </div>
+            <div class="splash-logo-particles">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+        
+        <h1 class="splash-title">
+            <span class="splash-title-bin">BIN</span><span class="splash-title-vest">VEST</span>
+        </h1>
+        
+        <p class="splash-subtitle">
+            <i class="fas fa-shield-halved"></i>
+            منصة استثمار موثوقة وآمنة
+        </p>
+        
+        <div class="splash-loader-wrap">
+            <div class="splash-loader-dual">
+                <div class="splash-loader-spinner splash-loader-spinner-1"></div>
+                <div class="splash-loader-spinner splash-loader-spinner-2"></div>
+                <div class="splash-loader-spinner splash-loader-spinner-3"></div>
+                <div class="splash-loader-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+            </div>
+            <div class="splash-loader-text">
+                <span>جاري التحميل</span>
+                <span class="splash-loader-dots">...</span>
+            </div>
+        </div>
+        
+        <div class="splash-progress-wrap">
+            <div class="splash-progress-bar">
+                <div class="splash-progress-fill" id="splashProgressFill"></div>
+            </div>
+            <div class="splash-progress-percent">
+                <span id="splashProgressPercent">0</span><span>%</span>
+            </div>
+        </div>
+        
+        <div class="splash-footer">
+            <div class="splash-footer-badge">
+                <i class="fas fa-lock"></i>
+                <span>تشفير SSL</span>
+            </div>
+            <div class="splash-footer-badge">
+                <i class="fas fa-bolt"></i>
+                <span>معاملات فورية</span>
+            </div>
+            <div class="splash-footer-badge">
+                <i class="fas fa-users"></i>
+                <span>+10K مستخدم</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="splash-version">BINVEST v2.4.1</div>
+</div>
+
+<!-- ============ SPLASH SCREEN SCRIPT (يجب أن يكون أول شيء) ============ -->
+<script>
+(function() {
+    const splash = document.getElementById('splashScreen');
+    const progressFill = document.getElementById('splashProgressFill');
+    const progressPercent = document.getElementById('splashProgressPercent');
+    
+    if (!splash) return;
+    
+    let progress = 0;
+    const loadingSteps = [
+        { to: 25, delay: 300 },
+        { to: 45, delay: 250 },
+        { to: 52, delay: 600 },
+        { to: 68, delay: 200 },
+        { to: 78, delay: 500 },
+        { to: 92, delay: 300 },
+        { to: 100, delay: 400 }
+    ];
+    let currentStep = 0;
+    
+    function animateProgress() {
+        if (currentStep >= loadingSteps.length) {
+            setTimeout(finishLoading, 400);
+            return;
+        }
+        const step = loadingSteps[currentStep];
+        const target = step.to;
+        const duration = step.delay;
+        const start = progress;
+        const startTime = performance.now();
+        
+        function update(now) {
+            const elapsed = now - startTime;
+            const t = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            progress = start + (target - start) * eased;
+            progressFill.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress);
+            
+            if (t < 1) {
+                requestAnimationFrame(update);
+            } else {
+                progress = target;
+                progressFill.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress);
+                currentStep++;
+                setTimeout(animateProgress, 80);
+            }
+        }
+        requestAnimationFrame(update);
+    }
+    
+    function finishLoading() {
+        progressFill.style.width = '100%';
+        progressPercent.textContent = '100';
+        setTimeout(() => {
+            splash.classList.add('hide');
+            setTimeout(() => {
+                splash.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 700);
+        }, 300);
+    }
+    
+    document.body.style.overflow = 'hidden';
+    setTimeout(animateProgress, 800);
+    
+    setTimeout(() => {
+        if (!splash.classList.contains('hide')) finishLoading();
+    }, 6000);
+})();
+</script>
 
 <!-- Top Bar -->
 <div class="topbar">
@@ -1118,7 +1710,7 @@
     </div>
 
     <div class="footer">
-        VIP INVEST PRO · SECURED BY DESIGN
+        BINVEST · SECURED BY DESIGN
     </div>
 
 </div>
@@ -1229,7 +1821,6 @@
 
     function closeSuccessModal() {
         document.getElementById('success-overlay').classList.remove('show');
-        // رجع السلوك الافتراضي
         setTimeout(() => {
             document.getElementById('success-btn').onclick = closeSuccessModal;
         }, 100);
